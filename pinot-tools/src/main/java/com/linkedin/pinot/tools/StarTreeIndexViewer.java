@@ -62,7 +62,7 @@ public class StarTreeIndexViewer {
   /*
    * MAX num children to show in the UI
    */
-  static int MAX_CHILDREN = 100;
+  static int MAX_CHILDREN = 10;
   private HashBiMap<String, Integer> dimensionNameToIndexMap;
   private Map<String, Dictionary> dictionaries;
   private Map<String, BlockSingleValIterator> valueIterators;
@@ -93,6 +93,7 @@ public class StarTreeIndexViewer {
     String writeValueAsString =
         objectMapper.defaultPrettyPrintingWriter().writeValueAsString(jsonRoot);
     LOGGER.info(writeValueAsString);
+    int records = countRawRecords(tree.getRoot(), true);
     startServer(segmentDir, writeValueAsString);
   }
 
@@ -155,6 +156,28 @@ public class StarTreeIndexViewer {
     return totalChildNodes;
   }
 
+  private int countRawRecords(StarTreeIndexNodeInterf node, boolean isAllNodePath) {
+    Iterator<? extends StarTreeIndexNodeInterf> childrenIterator = node.getChildrenIterator();
+    int rawRecordCount = 0;
+
+    while (childrenIterator.hasNext()) {
+      StarTreeIndexNodeInterf next = childrenIterator.next();
+      if (next.isLeaf()) {
+        if(next.getDimensionValue() != StarTreeIndexNodeInterf.ALL){
+          rawRecordCount += (next.getEndDocumentId() - node.getStartDocumentId());;
+        }
+      } else {
+         rawRecordCount += countRawRecords(next,
+            isAllNodePath && next.getDimensionValue() == StarTreeIndexNodeInterf.ALL);
+
+      }
+    }
+    if(isAllNodePath) {
+      LOGGER.info("Num Records at {}:{} is {}", dimensionNameToIndexMap.inverse().get(node.getDimensionName()), node.getDimensionValue() , rawRecordCount);
+    }
+    return rawRecordCount;
+  }
+
   public static void main(String[] args) throws Exception {
     if (args.length != 1) {
       LOGGER.error("USAGE: StarIndexViewer <segmentDirectory>");
@@ -179,8 +202,8 @@ public class StarTreeIndexViewer {
     int httpPort = 8090;
     URI baseUri = URI.create("http://0.0.0.0:" + Integer.toString(httpPort) + "/");
     HttpServer httpServer = GrizzlyHttpServerFactory.createHttpServer(baseUri, new StarTreeResource(json));
-
-    LOGGER.info("Go to http://{}:{}/  to view the star tree", "localhost", httpPort );
+    httpServer.start();
+    LOGGER.info("Go to http://{}:{}/startree  to view the star tree", "localhost", httpPort );
   }
 
   @Path("/")
@@ -195,10 +218,12 @@ public class StarTreeIndexViewer {
     }
 
     @GET
-    @Path("/")
+    @Path("/startree")
     @Produces(MediaType.TEXT_HTML)
     public InputStream getStarTreeHtml() {
-      return getClass().getClassLoader().getResourceAsStream("star-tree.html");
+      InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream("startree/star-tree.html");
+      LOGGER.info("resourceAsStream:" + resourceAsStream);
+      return resourceAsStream;
     }
   }
 }
