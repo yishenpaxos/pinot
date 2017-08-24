@@ -14,7 +14,7 @@ import org.apache.commons.collections.CollectionUtils;
 /**
  * LogicalNode considers partitioning of work.
  */
-public class LogicalNode extends AbstractLogicalNode<LogicalNode> {
+public class LogicalNode<K, V> extends AbstractLogicalNode<LogicalNode> {
 
   private Set<FrameworkNode> physicalNodes = new HashSet<>();
 
@@ -34,7 +34,7 @@ public class LogicalNode extends AbstractLogicalNode<LogicalNode> {
   }
 
   @Override
-  public ExecutionResultsReader getExecutionResultsReader() {
+  public ExecutionResultsReader<K, V> getExecutionResultsReader() {
     if (CollectionUtils.isNotEmpty(physicalNodes)) {
       if (physicalNodes.size() == 1) {
         FrameworkNode physicalNode = (FrameworkNode) CollectionUtils.get(physicalNodes, 0);
@@ -43,7 +43,7 @@ public class LogicalNode extends AbstractLogicalNode<LogicalNode> {
         throw new IllegalArgumentException("Multiple partitions are not supported yet.");
       }
     }
-    return new InMemoryExecutionResultsReader();
+    return new InMemoryExecutionResultsReader<>();
   }
 
   @Override

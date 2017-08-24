@@ -31,7 +31,7 @@ import java.util.concurrent.Callable;
  * which is taken care of by FrameworkNode. On the other hand, FrameworkNode does not have the whole picture of
  * the workflow (DAG), it only knows the incoming node for preparing the input of its Operator.
  */
-public abstract class FrameworkNode implements Callable<NodeIdentifier> {
+public abstract class FrameworkNode<K, V> implements Callable<NodeIdentifier> {
   protected NodeIdentifier nodeIdentifier = new NodeIdentifier();
   protected Class operatorClass;
   protected NodeConfig nodeConfig = new NodeConfig();
@@ -68,13 +68,13 @@ public abstract class FrameworkNode implements Callable<NodeIdentifier> {
     return nodeConfig;
   }
 
-  public abstract FrameworkNode getLogicalNode();
+  public abstract FrameworkNode<K, V> getLogicalNode();
 
-  public abstract Collection<FrameworkNode> getPhysicalNode();
+  public abstract Collection<FrameworkNode<K, V>> getPhysicalNode();
 
   public abstract ExecutionStatus getExecutionStatus();
 
-  public abstract ExecutionResultsReader getExecutionResultsReader();
+  public abstract ExecutionResultsReader<K, V> getExecutionResultsReader();
 
   /**
    * {@link NodeIdentifier} is always the unique identifier to a node and hence all the other fields of this class

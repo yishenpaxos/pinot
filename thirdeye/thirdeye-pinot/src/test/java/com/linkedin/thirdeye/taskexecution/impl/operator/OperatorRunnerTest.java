@@ -59,11 +59,11 @@ public class OperatorRunnerTest {
       incomingResultsReader.put(node3Identifier, reader3);
     }
 
-    OperatorContext<String, Integer> operatorContext =
+    OperatorContext operatorContext =
         OperatorRunner.buildInputOperatorContext(new NodeIdentifier("OperatorContextBuilder"), incomingResultsReader);
 
     Assert.assertEquals(operatorContext.getNodeIdentifier(), new NodeIdentifier("OperatorContextBuilder"));
-    Map<NodeIdentifier, ExecutionResults<String, Integer>> inputs = operatorContext.getInputs();
+    Map<NodeIdentifier, ExecutionResults> inputs = operatorContext.getInputs();
     Assert.assertTrue(MapUtils.isNotEmpty(inputs));
     ExecutionResults<String, Integer> executionResults1 = inputs.get(node1Identifier);
     Assert.assertEquals(executionResults1.keySet().size(), 2);
@@ -86,7 +86,7 @@ public class OperatorRunnerTest {
     ExecutionResults<String, Integer> executionResults = new ExecutionResults<>(new NodeIdentifier("DummyParent"));
     ExecutionResult<String, Integer> executionResult = new ExecutionResult<>("TestDummy", 123);
     executionResults.addResult(executionResult);
-    ExecutionResultsReader reader = new InMemoryExecutionResultsReader(executionResults);
+    ExecutionResultsReader reader = new InMemoryExecutionResultsReader<>(executionResults);
 
     OperatorRunner runner = new OperatorRunner(new NodeIdentifier(), nodeConfig, DummyOperator.class);
     runner.addIncomingExecutionResultReader(new NodeIdentifier("DummyNode"), reader);

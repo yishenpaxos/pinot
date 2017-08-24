@@ -18,9 +18,9 @@ import java.util.Map;
 import java.util.Set;
 
 
-public class ParallelOperatorRunner extends AbstractOperatorRunner {
+public class ParallelOperatorRunner<K, V> extends AbstractOperatorRunner {
 
-  private ExecutionResults executionResults;
+  private ExecutionResults<K, V> executionResults;
 
   public ParallelOperatorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass) {
     this(nodeIdentifier, nodeConfig, operatorClass, null);
@@ -29,12 +29,12 @@ public class ParallelOperatorRunner extends AbstractOperatorRunner {
   public ParallelOperatorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass,
       FrameworkNode logicalNode) {
     super(nodeIdentifier, nodeConfig, operatorClass, logicalNode);
-    this.executionResults = new ExecutionResults(nodeIdentifier);
+    this.executionResults = new ExecutionResults<>(nodeIdentifier);
   }
 
   @Override
   public ExecutionResultsReader getExecutionResultsReader() {
-    return new InMemoryExecutionResultsReader(executionResults);
+    return new InMemoryExecutionResultsReader<>(executionResults);
   }
 
   /**
@@ -52,20 +52,20 @@ public class ParallelOperatorRunner extends AbstractOperatorRunner {
         throw new IllegalArgumentException("Node identifier cannot be null");
       }
       int numRetry = nodeConfig.numRetryAtError();
-      for (int i = 0; i <= numRetry; ++i) {
-        try {
-          OperatorConfig operatorConfig = convertNodeConfigToOperatorConfig(nodeConfig);
-          Operator operator = initializeOperator(operatorClass, operatorConfig);
-          List<OperatorContext> operatorContexts = buildInputOperatorContext(nodeIdentifier, incomingResultsReaderMap);
-          // TODO: Submit each context to an individual thread
-          for (OperatorContext operatorContext : operatorContexts) {
-            ExecutionResult operatorResult = operator.run(operatorContext);
+      List<OperatorContext> operatorContexts = buildInputOperatorContext(nodeIdentifier, incomingResultsReaderMap);
+      // TODO: Submit each context to an individual thread
+      for (OperatorContext operatorContext : operatorContexts) {
+        for (int i = 0; i <= numRetry; ++i) {
+          try {
+            OperatorConfig operatorConfig = convertNodeConfigToOperatorConfig(nodeConfig);
+            Operator operator = initializeOperator(operatorClass, operatorConfig);
+            ExecutionResult<K, V> operatorResult = operator.run(operatorContext);
             // Assume that each operator generates a result with non-duplicated key
             executionResults.addResult(operatorResult);
-          }
-        } catch (Exception e) {
-          if (i == numRetry) {
-            setFailure(e);
+          } catch (Exception e) {
+            if (i == numRetry) {
+              setFailure(e);
+            }
           }
         }
       }
@@ -82,11 +82,9 @@ public class ParallelOperatorRunner extends AbstractOperatorRunner {
       Map<NodeIdentifier, ExecutionResultsReader> incomingResultsReader) {
     // Experimental code for considering multi-threading
     Set keys = new HashSet();
-    for (Map.Entry<NodeIdentifier, ExecutionResultsReader> nodeResultsEntry : incomingResultsReader.entrySet()) {
-      ExecutionResultsReader resultsReader = nodeResultsEntry.getValue();
+    for (ExecutionResultsReader resultsReader : incomingResultsReader.values()) {
       while (resultsReader.hasNext()) {
-        ExecutionResult next = resultsReader.next();
-        keys.add(next.key());
+        keys.add(resultsReader.next().key());
       }
     }
 

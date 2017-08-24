@@ -68,30 +68,30 @@ public class ParallelOperatorRunnerTest {
 
     for (OperatorContext operatorContext : operatorContextList) {
       Map<NodeIdentifier, ExecutionResults> inputs = operatorContext.getInputs();
-      Set keySet = new HashSet();
+      Set<String> keySet = new HashSet<>();
       for (Map.Entry<NodeIdentifier, ExecutionResults> nodeExecutionResultsEntry : inputs.entrySet()) {
-        ExecutionResults executionResults = nodeExecutionResultsEntry.getValue();
+        ExecutionResults<String, Integer> executionResults = nodeExecutionResultsEntry.getValue();
         keySet.addAll(executionResults.keySet());
       }
       Assert.assertEquals(keySet.size(), 1);
       String key = (String) CollectionUtils.get(keySet, 0);
-      ExecutionResults node1ExecutionResults = inputs.get(node1Identifier);
-      ExecutionResults node2ExecutionResults = inputs.get(node2Identifier);
-      ExecutionResults node3ExecutionResults = inputs.get(node3Identifier);
+      ExecutionResults<String, Integer> node1ExecutionResults = inputs.get(node1Identifier);
+      ExecutionResults<String, Integer> node2ExecutionResults = inputs.get(node2Identifier);
+      ExecutionResults<String, Integer> node3ExecutionResults = inputs.get(node3Identifier);
       switch (key) {
       case "result1121":
-        Assert.assertEquals(node1ExecutionResults.getResult(key).result(), 11);
-        Assert.assertEquals(node2ExecutionResults.getResult(key).result(), 21);
+        Assert.assertEquals(node1ExecutionResults.getResult(key).result(), Integer.valueOf(11));
+        Assert.assertEquals(node2ExecutionResults.getResult(key).result(), Integer.valueOf(21));
         Assert.assertNull(node3ExecutionResults.getResult(key));
         break;
       case "result12":
-        Assert.assertEquals(node1ExecutionResults.getResult(key).result(), 12);
+        Assert.assertEquals(node1ExecutionResults.getResult(key).result(), Integer.valueOf(12));
         Assert.assertNull(node2ExecutionResults.getResult(key));
         Assert.assertNull(node3ExecutionResults.getResult(key));
         break;
       case "result22":
         Assert.assertNull(node1ExecutionResults.getResult(key));
-        Assert.assertEquals(node2ExecutionResults.getResult(key).result(), 22);
+        Assert.assertEquals(node2ExecutionResults.getResult(key).result(), Integer.valueOf(22));
         Assert.assertNull(node3ExecutionResults.getResult(key));
         break;
       default:
@@ -109,7 +109,7 @@ public class ParallelOperatorRunnerTest {
     ExecutionResults<String, Integer> executionResults = new ExecutionResults<>(new NodeIdentifier("DummyParent"));
     ExecutionResult<String, Integer> executionResult = new ExecutionResult<>("TestDummy1", 123);
     executionResults.addResult(executionResult);
-    ExecutionResultsReader reader = new InMemoryExecutionResultsReader(executionResults);
+    ExecutionResultsReader reader = new InMemoryExecutionResultsReader<>(executionResults);
 
     ParallelOperatorRunner runner =
         new ParallelOperatorRunner(new NodeIdentifier(), nodeConfig, DummyOperator.class);
@@ -129,15 +129,15 @@ public class ParallelOperatorRunnerTest {
     nodeConfig.setSkipAtFailure(false);
     nodeConfig.setNumRetryAtError(0);
 
-    ExecutionResults<String, Integer> n1EexecutionResults = new ExecutionResults<>(new NodeIdentifier("DummyParent1"));
+    ExecutionResults<String, Integer> n1ExecutionResults = new ExecutionResults<>(new NodeIdentifier("DummyParent1"));
     ExecutionResult<String, Integer> n1ExecutionResult = new ExecutionResult<>("Dimension1", 123);
-    n1EexecutionResults.addResult(n1ExecutionResult);
-    ExecutionResultsReader node1Reader = new InMemoryExecutionResultsReader(n1EexecutionResults);
+    n1ExecutionResults.addResult(n1ExecutionResult);
+    ExecutionResultsReader node1Reader = new InMemoryExecutionResultsReader<>(n1ExecutionResults);
 
     ExecutionResults<String, Integer> n2ExecutionResults = new ExecutionResults<>(new NodeIdentifier("DummyParent2"));
     ExecutionResult<String, Integer> n2ExecutionResult = new ExecutionResult<>("Dimension2", 345);
     n2ExecutionResults.addResult(n2ExecutionResult);
-    ExecutionResultsReader node2Reader = new InMemoryExecutionResultsReader(n2ExecutionResults);
+    ExecutionResultsReader node2Reader = new InMemoryExecutionResultsReader<>(n2ExecutionResults);
 
     ParallelOperatorRunner runner =
         new ParallelOperatorRunner(new NodeIdentifier(), nodeConfig, DummyOperator.class);
@@ -181,7 +181,7 @@ public class ParallelOperatorRunnerTest {
         keySet.addAll(executionResults.keySet());
       }
       String key = (String) CollectionUtils.get(keySet, 0);
-      return new ExecutionResult<String, Integer>(key, Integer.valueOf(key.replaceAll("[^0-9]", "")));
+      return new ExecutionResult<>(key, Integer.valueOf(key.replaceAll("[^0-9]", "")));
     }
   }
 

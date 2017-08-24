@@ -6,9 +6,9 @@ import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResults;
 import java.util.HashMap;
 import java.util.Map;
 
-public class OperatorContext<K, V> implements ExecutionContext<ExecutionResults<K, V>> {
+public class OperatorContext implements ExecutionContext<ExecutionResults> {
   private NodeIdentifier nodeIdentifier;
-  private Map<NodeIdentifier, ExecutionResults<K, V>> inputs = new HashMap<>();
+  private Map<NodeIdentifier, ExecutionResults> inputs = new HashMap<>();
 
   @Override
   public NodeIdentifier getNodeIdentifier() {
@@ -21,12 +21,12 @@ public class OperatorContext<K, V> implements ExecutionContext<ExecutionResults<
   }
 
   @Override
-  public Map<NodeIdentifier, ExecutionResults<K, V>> getInputs() {
+  public Map<NodeIdentifier, ExecutionResults> getInputs() {
     return inputs;
   }
 
   @Override
-  public void addResults(NodeIdentifier identifier, ExecutionResults<K, V> operatorResult) {
+  public void addResults(NodeIdentifier identifier, ExecutionResults operatorResult) {
     inputs.put(identifier, operatorResult);
   }
 }

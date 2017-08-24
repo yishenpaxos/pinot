@@ -16,9 +16,9 @@ import java.util.Map;
 /**
  * OperatorRunner considers multi-threading.
  */
-public class OperatorRunner extends AbstractOperatorRunner {
+public class OperatorRunner<K, V> extends AbstractOperatorRunner {
 
-  private ExecutionResults executionResults;
+  private ExecutionResults<K, V> executionResults;
 
 
   public OperatorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass) {
@@ -27,7 +27,7 @@ public class OperatorRunner extends AbstractOperatorRunner {
 
   public OperatorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass, FrameworkNode logicalNode) {
     super(nodeIdentifier, nodeConfig, operatorClass, logicalNode);
-    this.executionResults = new ExecutionResults(nodeIdentifier);
+    this.executionResults = new ExecutionResults<>(nodeIdentifier);
   }
 
   @Override
@@ -36,8 +36,8 @@ public class OperatorRunner extends AbstractOperatorRunner {
   }
 
   @Override
-  public ExecutionResultsReader getExecutionResultsReader() {
-    return new InMemoryExecutionResultsReader(executionResults);
+  public ExecutionResultsReader<K, V> getExecutionResultsReader() {
+    return new InMemoryExecutionResultsReader<>(executionResults);
   }
 
   /**
@@ -60,7 +60,7 @@ public class OperatorRunner extends AbstractOperatorRunner {
           OperatorConfig operatorConfig = convertNodeConfigToOperatorConfig(nodeConfig);
           Operator operator = initializeOperator(operatorClass, operatorConfig);
           OperatorContext operatorContext = buildInputOperatorContext(nodeIdentifier, incomingResultsReaderMap);
-          ExecutionResult operatorResult = operator.run(operatorContext);
+          ExecutionResult<K, V> operatorResult = operator.run(operatorContext);
           executionResults.addResult(operatorResult);
         } catch (Exception e) {
           if (i == numRetry) {
@@ -83,7 +83,7 @@ public class OperatorRunner extends AbstractOperatorRunner {
     OperatorContext operatorContext = new OperatorContext();
     operatorContext.setNodeIdentifier(nodeIdentifier);
     for (Map.Entry<NodeIdentifier, ExecutionResultsReader> nodeReadersEntry : incomingResultsReader.entrySet()) {
-      ExecutionResults executionResults = new ExecutionResults(nodeReadersEntry.getKey());
+      ExecutionResults executionResults = new ExecutionResults<>(nodeReadersEntry.getKey());
       ExecutionResultsReader reader = nodeReadersEntry.getValue();
       while (reader.hasNext()) {
         executionResults.addResult(reader.next());

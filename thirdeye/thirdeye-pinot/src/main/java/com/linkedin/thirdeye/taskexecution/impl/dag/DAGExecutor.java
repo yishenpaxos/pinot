@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
  * service. An executor takes care of only logical execution (control flow). The physical execution is done by
  * OperatorRunner, which could be executed on other machines.
  */
-public class DAGExecutor<T extends AbstractLogicalNode<T>> {
+public class DAGExecutor<T extends AbstractLogicalNode> {
   private static final Logger LOG = LoggerFactory.getLogger(DAGExecutor.class);
   private ExecutorCompletionService<NodeIdentifier> executorCompletionService;
 
@@ -54,8 +54,8 @@ public class DAGExecutor<T extends AbstractLogicalNode<T>> {
         processedNodes.add(nodeIdentifier);
         // Search for the next node to execute
         T node = dag.getNode(nodeIdentifier);
-        for (T outgoingNode : node.getOutgoingNodes()) {
-          processNode(outgoingNode, dagConfig);
+        for (Object outGoingNode : node.getOutgoingNodes()) {
+          processNode((T) outGoingNode, dagConfig);
         }
       } catch (InterruptedException | ExecutionException e) {
         // The implementation of OperatorRunner needs to guarantee that this block never happens
@@ -89,8 +89,8 @@ public class DAGExecutor<T extends AbstractLogicalNode<T>> {
   }
 
   private boolean parentsAreProcessed(T node) {
-    for (Node pNode : node.getIncomingNodes()) {
-      if (!processedNodes.contains(pNode.getIdentifier())) {
+    for (Object pNode : node.getIncomingNodes()) {
+      if (!processedNodes.contains(((T) pNode).getIdentifier())) {
         return false;
       }
     }
