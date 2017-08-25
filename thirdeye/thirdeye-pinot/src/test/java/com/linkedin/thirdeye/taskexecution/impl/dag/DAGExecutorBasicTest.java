@@ -301,7 +301,7 @@ public class DAGExecutorBasicTest {
    *
    * @return the final execution log of the DAG.
    */
-  private List<String> checkAndGetFinalResult(LogicalNode node) {
+  static List<String> checkAndGetFinalResult(LogicalNode node) {
     ExecutionResultsReader executionResultsReader = node.getExecutionResultsReader();
     Assert.assertNotNull(executionResultsReader);
     Assert.assertTrue(executionResultsReader.hasNext());

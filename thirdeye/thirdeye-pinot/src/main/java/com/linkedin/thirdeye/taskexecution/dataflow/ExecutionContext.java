@@ -13,4 +13,6 @@ public interface ExecutionContext<T extends ExecutionResults> {
 
   void addResults(NodeIdentifier identifier, T result);
 
+  int size();
+
 }

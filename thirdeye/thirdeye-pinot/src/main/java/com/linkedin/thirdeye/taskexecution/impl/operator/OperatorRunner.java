@@ -6,7 +6,7 @@ import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResult;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResults;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.dag.ExecutionStatus;
-import com.linkedin.thirdeye.taskexecution.impl.dag.InMemoryExecutionResultsReader;
+import com.linkedin.thirdeye.taskexecution.impl.dataflow.InMemoryExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.dag.NodeConfig;
 import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
@@ -59,9 +59,12 @@ public class OperatorRunner<K, V> extends AbstractOperatorRunner {
         try {
           OperatorConfig operatorConfig = convertNodeConfigToOperatorConfig(nodeConfig);
           Operator operator = initializeOperator(operatorClass, operatorConfig);
-          OperatorContext operatorContext = buildInputOperatorContext(nodeIdentifier, incomingResultsReaderMap);
-          ExecutionResult<K, V> operatorResult = operator.run(operatorContext);
-          executionResults.addResult(operatorResult);
+          OperatorContext operatorContext =
+              buildInputOperatorContext(nodeIdentifier, incomingResultsReaderMap, nodeConfig.runWithEmptyInput());
+          if (operatorContext != null) {
+            ExecutionResult<K, V> operatorResult = operator.run(operatorContext);
+            executionResults.addResult(operatorResult);
+          }
         } catch (Exception e) {
           if (i == numRetry) {
             setFailure(e);
@@ -78,7 +81,7 @@ public class OperatorRunner<K, V> extends AbstractOperatorRunner {
   }
 
   static OperatorContext buildInputOperatorContext(NodeIdentifier nodeIdentifier,
-      Map<NodeIdentifier, ExecutionResultsReader> incomingResultsReader) {
+      Map<NodeIdentifier, ExecutionResultsReader> incomingResultsReader, boolean allowEmptyIncomingResult) {
 
     OperatorContext operatorContext = new OperatorContext();
     operatorContext.setNodeIdentifier(nodeIdentifier);
@@ -92,6 +95,10 @@ public class OperatorRunner<K, V> extends AbstractOperatorRunner {
         operatorContext.addResults(nodeReadersEntry.getKey(), executionResults);
       }
     }
-    return operatorContext;
+    if (operatorContext.size() != 0 || allowEmptyIncomingResult) {
+      return operatorContext;
+    } else {
+      return null;
+    }
   }
 }

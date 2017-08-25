@@ -4,6 +4,7 @@ import com.linkedin.thirdeye.taskexecution.dag.AbstractLogicalNode;
 import com.linkedin.thirdeye.taskexecution.dag.FrameworkNode;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
+import com.linkedin.thirdeye.taskexecution.impl.dataflow.InMemoryExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.operator.OperatorRunner;
 import java.util.Collection;
 import java.util.HashSet;
@@ -18,9 +19,12 @@ public class LogicalNode<K, V> extends AbstractLogicalNode<LogicalNode> {
 
   private Set<FrameworkNode> physicalNodes = new HashSet<>();
 
-
   public LogicalNode(String name, Class operatorClass) {
-    super(new NodeIdentifier(name), operatorClass);
+    this(new NodeIdentifier(name), operatorClass);
+  }
+
+  public LogicalNode(NodeIdentifier nodeIdentifier, Class operatorClass) {
+    super(nodeIdentifier, operatorClass);
   }
 
   @Override

@@ -5,7 +5,7 @@ import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResult;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResults;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.dag.ExecutionStatus;
-import com.linkedin.thirdeye.taskexecution.impl.dag.InMemoryExecutionResultsReader;
+import com.linkedin.thirdeye.taskexecution.impl.dataflow.InMemoryExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.dag.NodeConfig;
 import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;

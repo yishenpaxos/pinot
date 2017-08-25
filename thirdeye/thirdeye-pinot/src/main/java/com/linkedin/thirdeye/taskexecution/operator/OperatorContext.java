@@ -10,6 +10,13 @@ public class OperatorContext implements ExecutionContext<ExecutionResults> {
   private NodeIdentifier nodeIdentifier;
   private Map<NodeIdentifier, ExecutionResults> inputs = new HashMap<>();
 
+  public OperatorContext() {
+  }
+
+  public OperatorContext(NodeIdentifier nodeIdentifier) {
+    this.nodeIdentifier = nodeIdentifier;
+  }
+
   @Override
   public NodeIdentifier getNodeIdentifier() {
     return nodeIdentifier;
@@ -28,5 +35,10 @@ public class OperatorContext implements ExecutionContext<ExecutionResults> {
   @Override
   public void addResults(NodeIdentifier identifier, ExecutionResults operatorResult) {
     inputs.put(identifier, operatorResult);
+  }
+
+  @Override
+  public int size() {
+    return inputs.size();
   }
 }

@@ -73,9 +73,6 @@ public class DAGExecutor<T extends AbstractLogicalNode> {
   private void processNode(T node, DAGConfig dagConfig) {
     if (!isProcessed(node) && parentsAreProcessed(node)) {
       NodeConfig nodeConfig = dagConfig.getNodeConfig(node.getIdentifier());
-      if (nodeConfig == null) {
-        nodeConfig = new NodeConfig();
-      }
       node.setNodeConfig(nodeConfig);
 
       LOG.info("Submitting node -- {} -- for execution.", node.getIdentifier().toString());

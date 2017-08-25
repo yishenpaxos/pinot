@@ -5,9 +5,8 @@ import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResults;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.dag.ExecutionStatus;
-import com.linkedin.thirdeye.taskexecution.impl.dag.InMemoryExecutionResultsReader;
+import com.linkedin.thirdeye.taskexecution.impl.dataflow.InMemoryExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.dag.NodeConfig;
-import com.linkedin.thirdeye.taskexecution.impl.operator.OperatorRunner;
 import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
@@ -59,8 +58,11 @@ public class OperatorRunnerTest {
       incomingResultsReader.put(node3Identifier, reader3);
     }
 
-    OperatorContext operatorContext =
-        OperatorRunner.buildInputOperatorContext(new NodeIdentifier("OperatorContextBuilder"), incomingResultsReader);
+    final boolean allowEmptyInput = false;
+    OperatorContext operatorContext = OperatorRunner
+        .buildInputOperatorContext(new NodeIdentifier("OperatorContextBuilder"), incomingResultsReader,
+            allowEmptyInput);
+    Assert.assertNotNull(operatorContext);
 
     Assert.assertEquals(operatorContext.getNodeIdentifier(), new NodeIdentifier("OperatorContextBuilder"));
     Map<NodeIdentifier, ExecutionResults> inputs = operatorContext.getInputs();
@@ -75,6 +77,23 @@ public class OperatorRunnerTest {
     Assert.assertEquals(executionResults2.getResult(key22).result(), Integer.valueOf(22));
     ExecutionResults<String, Integer> executionResults3 = inputs.get(node3Identifier);
     Assert.assertNull(executionResults3);
+  }
+
+  @Test
+  public void testBuildEmptyInputOperatorContext() {
+    Map<NodeIdentifier, ExecutionResultsReader> incomingResultsReader = new HashMap<>();
+
+    boolean allowEmptyInput = false;
+    OperatorContext operatorContextNull = OperatorRunner
+        .buildInputOperatorContext(new NodeIdentifier("OperatorContextBuilder"), incomingResultsReader,
+            allowEmptyInput);
+    Assert.assertNull(operatorContextNull);
+
+    allowEmptyInput = true;
+    OperatorContext operatorContextNotNull = OperatorRunner
+        .buildInputOperatorContext(new NodeIdentifier("OperatorContextBuilder"), incomingResultsReader,
+            allowEmptyInput);
+    Assert.assertNotNull(operatorContextNotNull);
   }
 
   @Test
@@ -126,7 +145,7 @@ public class OperatorRunnerTest {
 
     @Override
     public ExecutionResult run(OperatorContext operatorContext) {
-      return new ExecutionResult<String, Integer>("I am a Dummy", 0);
+      return new ExecutionResult<>("I am a Dummy", 0);
     }
   }
 

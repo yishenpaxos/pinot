@@ -16,6 +16,10 @@ public class DAGConfig {
     this.stopAtFailure = stopAtFailure;
   }
 
+  public void putNodeConfig(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig) {
+    nodeConfigs.put(nodeIdentifier, nodeConfig);
+  }
+
   public NodeConfig getNodeConfig(NodeIdentifier nodeIdentifier) {
     if (nodeConfigs.containsKey(nodeIdentifier)) {
       return nodeConfigs.get(nodeIdentifier);
