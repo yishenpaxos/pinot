@@ -7,8 +7,8 @@ import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.dag.ExecutionStatus;
 import com.linkedin.thirdeye.taskexecution.impl.dataflow.InMemoryExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.dag.NodeConfig;
-import com.linkedin.thirdeye.taskexecution.operator.Operator;
-import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
+import com.linkedin.thirdeye.taskexecution.operator.Processor;
+import com.linkedin.thirdeye.taskexecution.operator.ProcessorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,12 +17,12 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 
-public class OperatorRunnerTest {
+public class ProcessorRunnerTest {
 
   @Test
   public void testCreation() {
     try {
-      new OperatorRunner(new NodeIdentifier(), new NodeConfig(), DummyOperator.class);
+      new OperatorRunner(new NodeIdentifier(), new NodeConfig(), DummyProcessor.class);
     } catch (Exception e) {
       Assert.fail();
     }
@@ -107,7 +107,7 @@ public class OperatorRunnerTest {
     executionResults.addResult(executionResult);
     ExecutionResultsReader reader = new InMemoryExecutionResultsReader<>(executionResults);
 
-    OperatorRunner runner = new OperatorRunner(new NodeIdentifier(), nodeConfig, DummyOperator.class);
+    OperatorRunner runner = new OperatorRunner(new NodeIdentifier(), nodeConfig, DummyProcessor.class);
     runner.addIncomingExecutionResultReader(new NodeIdentifier("DummyNode"), reader);
     runner.call();
     Assert.assertEquals(runner.getExecutionStatus(), ExecutionStatus.SUCCESS);
@@ -123,7 +123,7 @@ public class OperatorRunnerTest {
     NodeConfig nodeConfig = new NodeConfig();
     nodeConfig.setSkipAtFailure(false);
     nodeConfig.setNumRetryAtError(1);
-    OperatorRunner runner = new OperatorRunner(new NodeIdentifier(), nodeConfig, FailedRunOperator.class);
+    OperatorRunner runner = new OperatorRunner(new NodeIdentifier(), nodeConfig, FailedRunProcessor.class);
     runner.call();
     Assert.assertEquals(runner.getExecutionStatus(), ExecutionStatus.FAILED);
   }
@@ -133,14 +133,23 @@ public class OperatorRunnerTest {
     NodeConfig nodeConfig = new NodeConfig();
     nodeConfig.setSkipAtFailure(true);
     nodeConfig.setNumRetryAtError(2);
-    OperatorRunner runner = new OperatorRunner(new NodeIdentifier(), nodeConfig, FailedRunOperator.class);
+    OperatorRunner runner = new OperatorRunner(new NodeIdentifier(), nodeConfig, FailedRunProcessor.class);
     runner.call();
     Assert.assertEquals(runner.getExecutionStatus(), ExecutionStatus.SKIPPED);
   }
 
-  public static class DummyOperator implements Operator {
+  @Test
+  public void testNullIdentifier() {
+    OperatorRunner runner = new OperatorRunner(null, new NodeConfig(), DummyProcessor.class);
+    NodeIdentifier nodeIdentifier = runner.call();
+    Assert.assertEquals(runner.getExecutionStatus(), ExecutionStatus.SUCCESS);
+    Assert.assertNotNull(nodeIdentifier);
+    Assert.assertNotNull(nodeIdentifier.getName());
+  }
+
+  public static class DummyProcessor implements Processor {
     @Override
-    public void initialize(OperatorConfig operatorConfig) {
+    public void initialize(ProcessorConfig processorConfig) {
     }
 
     @Override
@@ -149,9 +158,9 @@ public class OperatorRunnerTest {
     }
   }
 
-  public static class FailedRunOperator implements Operator {
+  public static class FailedRunProcessor implements Processor {
     @Override
-    public void initialize(OperatorConfig operatorConfig) {
+    public void initialize(ProcessorConfig processorConfig) {
     }
 
     @Override

@@ -8,8 +8,8 @@ import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.dag.ExecutionStatus;
 import com.linkedin.thirdeye.taskexecution.impl.dataflow.InMemoryExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.dag.NodeConfig;
-import com.linkedin.thirdeye.taskexecution.operator.Operator;
-import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
+import com.linkedin.thirdeye.taskexecution.operator.Processor;
+import com.linkedin.thirdeye.taskexecution.operator.ProcessorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -57,10 +57,10 @@ public class ParallelOperatorRunner<K, V> extends AbstractOperatorRunner {
       for (OperatorContext operatorContext : operatorContexts) {
         for (int i = 0; i <= numRetry; ++i) {
           try {
-            OperatorConfig operatorConfig = convertNodeConfigToOperatorConfig(nodeConfig);
-            Operator operator = initializeOperator(operatorClass, operatorConfig);
-            ExecutionResult<K, V> operatorResult = operator.run(operatorContext);
-            // Assume that each operator generates a result with non-duplicated key
+            ProcessorConfig processorConfig = convertNodeConfigToOperatorConfig(nodeConfig);
+            Processor processor = initializeOperator(operatorClass, processorConfig);
+            ExecutionResult<K, V> operatorResult = processor.run(operatorContext);
+            // Assume that each processor generates a result with non-duplicated key
             executionResults.addResult(operatorResult);
           } catch (Exception e) {
             if (i == numRetry) {

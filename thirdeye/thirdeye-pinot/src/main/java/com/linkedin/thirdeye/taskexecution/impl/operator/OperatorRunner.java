@@ -8,8 +8,8 @@ import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.dag.ExecutionStatus;
 import com.linkedin.thirdeye.taskexecution.impl.dataflow.InMemoryExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.dag.NodeConfig;
-import com.linkedin.thirdeye.taskexecution.operator.Operator;
-import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
+import com.linkedin.thirdeye.taskexecution.operator.Processor;
+import com.linkedin.thirdeye.taskexecution.operator.ProcessorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
 import java.util.Map;
 
@@ -25,9 +25,17 @@ public class OperatorRunner<K, V> extends AbstractOperatorRunner {
     this(nodeIdentifier, nodeConfig, operatorClass, null);
   }
 
-  public OperatorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass, FrameworkNode logicalNode) {
-    super(nodeIdentifier, nodeConfig, operatorClass, logicalNode);
+  private OperatorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass,
+      FrameworkNode logicalNode) {
+    super(ensureNonNullNodeIdentifier(nodeIdentifier), nodeConfig, operatorClass, logicalNode);
     this.executionResults = new ExecutionResults<>(nodeIdentifier);
+  }
+
+  private static NodeIdentifier ensureNonNullNodeIdentifier(NodeIdentifier nodeIdentifier) {
+    if (nodeIdentifier == null) {
+      nodeIdentifier = new NodeIdentifier("Null Identifier");
+    }
+    return nodeIdentifier;
   }
 
   @Override
@@ -57,12 +65,12 @@ public class OperatorRunner<K, V> extends AbstractOperatorRunner {
       int numRetry = nodeConfig.numRetryAtError();
       for (int i = 0; i <= numRetry; ++i) {
         try {
-          OperatorConfig operatorConfig = convertNodeConfigToOperatorConfig(nodeConfig);
-          Operator operator = initializeOperator(operatorClass, operatorConfig);
+          ProcessorConfig processorConfig = convertNodeConfigToOperatorConfig(nodeConfig);
+          Processor processor = initializeOperator(operatorClass, processorConfig);
           OperatorContext operatorContext =
               buildInputOperatorContext(nodeIdentifier, incomingResultsReaderMap, nodeConfig.runWithEmptyInput());
           if (operatorContext != null) {
-            ExecutionResult<K, V> operatorResult = operator.run(operatorContext);
+            ExecutionResult<K, V> operatorResult = processor.run(operatorContext);
             executionResults.addResult(operatorResult);
           }
         } catch (Exception e) {

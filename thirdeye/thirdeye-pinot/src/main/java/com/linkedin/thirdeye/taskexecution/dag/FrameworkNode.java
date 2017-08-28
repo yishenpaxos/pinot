@@ -29,7 +29,7 @@ import java.util.concurrent.Callable;
  *
  * {@link com.linkedin.thirdeye.taskexecution.impl.dag.DAGExecutor} should remain agnostic to the vertical topology,
  * which is taken care of by FrameworkNode. On the other hand, FrameworkNode does not have the whole picture of
- * the workflow (DAG), it only knows the incoming node for preparing the input of its Operator.
+ * the workflow (DAG), it only knows the incoming node for preparing the input of its Processor.
  */
 public abstract class FrameworkNode<K, V> implements Callable<NodeIdentifier> {
   protected NodeIdentifier nodeIdentifier = new NodeIdentifier();
@@ -41,6 +41,12 @@ public abstract class FrameworkNode<K, V> implements Callable<NodeIdentifier> {
 
   protected FrameworkNode(NodeIdentifier nodeIdentifier, Class operatorClass) {
     this.nodeIdentifier = nodeIdentifier;
+    this.operatorClass = operatorClass;
+  }
+
+  protected FrameworkNode(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass) {
+    this.nodeIdentifier = nodeIdentifier;
+    this.nodeConfig = nodeConfig;
     this.operatorClass = operatorClass;
   }
 

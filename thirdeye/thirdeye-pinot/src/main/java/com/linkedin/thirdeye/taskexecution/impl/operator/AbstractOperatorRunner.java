@@ -5,8 +5,8 @@ import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.dag.ExecutionStatus;
 import com.linkedin.thirdeye.taskexecution.impl.dag.NodeConfig;
-import com.linkedin.thirdeye.taskexecution.operator.Operator;
-import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
+import com.linkedin.thirdeye.taskexecution.operator.Processor;
+import com.linkedin.thirdeye.taskexecution.operator.ProcessorConfig;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -23,9 +23,7 @@ public abstract class AbstractOperatorRunner extends FrameworkNode {
 
   public AbstractOperatorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass,
       FrameworkNode logicalNode) {
-    this.nodeIdentifier = nodeIdentifier;
-    this.nodeConfig = nodeConfig;
-    this.operatorClass = operatorClass;
+    super(nodeIdentifier, nodeConfig, operatorClass);
     this.logicalNode = logicalNode;
   }
 
@@ -63,16 +61,16 @@ public abstract class AbstractOperatorRunner extends FrameworkNode {
   }
 
   // TODO: Implement this method
-  static OperatorConfig convertNodeConfigToOperatorConfig(NodeConfig nodeConfig) {
+  static ProcessorConfig convertNodeConfigToOperatorConfig(NodeConfig nodeConfig) {
     return null;
   }
 
-  static Operator initializeOperator(Class operatorClass, OperatorConfig operatorConfig)
+  static Processor initializeOperator(Class operatorClass, ProcessorConfig processorConfig)
       throws IllegalAccessException, InstantiationException {
     try {
-      Operator operator = (Operator) operatorClass.newInstance();
-      operator.initialize(operatorConfig);
-      return operator;
+      Processor processor = (Processor) operatorClass.newInstance();
+      processor.initialize(processorConfig);
+      return processor;
     } catch (Exception e) {
       // We cannot do anything if something bad happens here excepting rethrow the exception.
       LOG.warn("Failed to initialize {}", operatorClass.getName());

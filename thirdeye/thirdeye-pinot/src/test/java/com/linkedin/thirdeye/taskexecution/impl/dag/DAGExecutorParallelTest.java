@@ -4,8 +4,8 @@ import com.linkedin.thirdeye.taskexecution.dag.DAG;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResult;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResults;
-import com.linkedin.thirdeye.taskexecution.operator.Operator;
-import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
+import com.linkedin.thirdeye.taskexecution.operator.Processor;
+import com.linkedin.thirdeye.taskexecution.operator.ProcessorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,8 +30,8 @@ public class DAGExecutorParallelTest {
   @Test(enabled = false)
   public void testOneNodeChainExecution() {
     DAG<LogicalNode> dag = new LogicalPlan();
-    LogicalNode root = new LogicalNode("root", LogGeneratorOperator.class);
-    ParallelLogicNode loopNode = new ParallelLogicNode("2", LogOperator.class);
+    LogicalNode root = new LogicalNode("root", LogGeneratorProcessor.class);
+    ParallelLogicNode loopNode = new ParallelLogicNode("2", LogProcessor.class);
     dag.addNode(root);
     dag.addNode(loopNode);
     dag.addEdge(root, loopNode);
@@ -49,11 +49,11 @@ public class DAGExecutorParallelTest {
   /**
    * An operator that appends node name to a list, which is passed in from its incoming nodes.
    */
-  public static class LogGeneratorOperator implements Operator {
-    private static final Logger LOG = LoggerFactory.getLogger(LogGeneratorOperator.class);
+  public static class LogGeneratorProcessor implements Processor {
+    private static final Logger LOG = LoggerFactory.getLogger(LogGeneratorProcessor.class);
 
     @Override
-    public void initialize(OperatorConfig operatorConfig) {
+    public void initialize(ProcessorConfig processorConfig) {
     }
 
     @Override
@@ -78,11 +78,11 @@ public class DAGExecutorParallelTest {
   /**
    * An operator that appends node name to a list, which is passed in from its incoming nodes.
    */
-  public static class LogOperator implements Operator {
-    private static final Logger LOG = LoggerFactory.getLogger(LogOperator.class);
+  public static class LogProcessor implements Processor {
+    private static final Logger LOG = LoggerFactory.getLogger(LogProcessor.class);
 
     @Override
-    public void initialize(OperatorConfig operatorConfig) {
+    public void initialize(ProcessorConfig processorConfig) {
     }
 
     @Override

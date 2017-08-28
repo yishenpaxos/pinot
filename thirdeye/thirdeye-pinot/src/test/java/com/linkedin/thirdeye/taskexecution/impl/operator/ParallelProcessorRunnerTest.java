@@ -7,8 +7,8 @@ import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.dag.ExecutionStatus;
 import com.linkedin.thirdeye.taskexecution.impl.dataflow.InMemoryExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.dag.NodeConfig;
-import com.linkedin.thirdeye.taskexecution.operator.Operator;
-import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
+import com.linkedin.thirdeye.taskexecution.operator.Processor;
+import com.linkedin.thirdeye.taskexecution.operator.ProcessorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -19,12 +19,12 @@ import org.apache.commons.collections.CollectionUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-public class ParallelOperatorRunnerTest {
+public class ParallelProcessorRunnerTest {
 
   @Test
   public void testCreation() {
     try {
-      new ParallelOperatorRunner(new NodeIdentifier(), new NodeConfig(), OperatorRunnerTest.DummyOperator.class);
+      new ParallelOperatorRunner(new NodeIdentifier(), new NodeConfig(), ProcessorRunnerTest.DummyProcessor.class);
     } catch (Exception e) {
       Assert.fail();
     }
@@ -112,7 +112,7 @@ public class ParallelOperatorRunnerTest {
     ExecutionResultsReader reader = new InMemoryExecutionResultsReader<>(executionResults);
 
     ParallelOperatorRunner runner =
-        new ParallelOperatorRunner(new NodeIdentifier(), nodeConfig, DummyOperator.class);
+        new ParallelOperatorRunner(new NodeIdentifier(), nodeConfig, DummyProcessor.class);
     runner.addIncomingExecutionResultReader(new NodeIdentifier("DummyNode"), reader);
     runner.call();
     Assert.assertEquals(runner.getExecutionStatus(), ExecutionStatus.SUCCESS);
@@ -140,7 +140,7 @@ public class ParallelOperatorRunnerTest {
     ExecutionResultsReader node2Reader = new InMemoryExecutionResultsReader<>(n2ExecutionResults);
 
     ParallelOperatorRunner runner =
-        new ParallelOperatorRunner(new NodeIdentifier(), nodeConfig, DummyOperator.class);
+        new ParallelOperatorRunner(new NodeIdentifier(), nodeConfig, DummyProcessor.class);
     runner.addIncomingExecutionResultReader(new NodeIdentifier("DummyParent1"), node1Reader);
     runner.addIncomingExecutionResultReader(new NodeIdentifier("DummyParent2"), node2Reader);
     runner.call();
@@ -168,9 +168,9 @@ public class ParallelOperatorRunnerTest {
     Assert.assertEquals(recordCounter, 2);
   }
 
-  public static class DummyOperator implements Operator {
+  public static class DummyProcessor implements Processor {
     @Override
-    public void initialize(OperatorConfig operatorConfig) {
+    public void initialize(ProcessorConfig processorConfig) {
     }
 
     @Override

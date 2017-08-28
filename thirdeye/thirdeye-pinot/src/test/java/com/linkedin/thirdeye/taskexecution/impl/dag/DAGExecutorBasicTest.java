@@ -5,8 +5,8 @@ import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResult;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResults;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
-import com.linkedin.thirdeye.taskexecution.operator.Operator;
-import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
+import com.linkedin.thirdeye.taskexecution.operator.Processor;
+import com.linkedin.thirdeye.taskexecution.operator.ProcessorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -34,7 +34,7 @@ public class DAGExecutorBasicTest {
   @Test
   public void testOneNodeExecution() {
     DAG<LogicalNode> dag = new LogicalPlan();
-    LogicalNode root = new LogicalNode("root", LogOperator.class);
+    LogicalNode root = new LogicalNode("root", LogProcessor.class);
     dag.addNode(root);
 
     DAGExecutor<LogicalNode> dagExecutor = new DAGExecutor<>(threadPool);
@@ -55,9 +55,9 @@ public class DAGExecutorBasicTest {
   @Test
   public void testOneNodeChainExecution() {
     DAG<LogicalNode> dag = new LogicalPlan();
-    LogicalNode node1 = new LogicalNode("1", LogOperator.class);
-    LogicalNode node2 = new LogicalNode("2", LogOperator.class);
-    LogicalNode node3 = new LogicalNode("3", LogOperator.class);
+    LogicalNode node1 = new LogicalNode("1", LogProcessor.class);
+    LogicalNode node2 = new LogicalNode("2", LogProcessor.class);
+    LogicalNode node3 = new LogicalNode("3", LogProcessor.class);
     dag.addEdge(node1, node2);
     dag.addEdge(node2, node3);
 
@@ -89,17 +89,17 @@ public class DAGExecutorBasicTest {
   @Test
   public void testTwoNodeChainsExecution() {
     DAG<LogicalNode> dag = new LogicalPlan();
-    LogicalNode node11 = new LogicalNode("root1", LogOperator.class);
-    LogicalNode node12 = new LogicalNode("node12", LogOperator.class);
-    LogicalNode leaf1 = new LogicalNode("leaf1", LogOperator.class);
+    LogicalNode node11 = new LogicalNode("root1", LogProcessor.class);
+    LogicalNode node12 = new LogicalNode("node12", LogProcessor.class);
+    LogicalNode leaf1 = new LogicalNode("leaf1", LogProcessor.class);
     dag.addEdge(node11, node12);
     dag.addEdge(node12, leaf1);
 
-    LogicalNode node21 = new LogicalNode("root2", LogOperator.class);
-    LogicalNode node22 = new LogicalNode("node22", LogOperator.class);
-    LogicalNode node23 = new LogicalNode("node23", LogOperator.class);
-    LogicalNode node24 = new LogicalNode("node24", LogOperator.class);
-    LogicalNode leaf2 = new LogicalNode("leaf2", LogOperator.class);
+    LogicalNode node21 = new LogicalNode("root2", LogProcessor.class);
+    LogicalNode node22 = new LogicalNode("node22", LogProcessor.class);
+    LogicalNode node23 = new LogicalNode("node23", LogProcessor.class);
+    LogicalNode node24 = new LogicalNode("node24", LogProcessor.class);
+    LogicalNode leaf2 = new LogicalNode("leaf2", LogProcessor.class);
     dag.addEdge(node21, node22);
     dag.addEdge(node22, node23);
     dag.addEdge(node23, leaf2);
@@ -156,16 +156,16 @@ public class DAGExecutorBasicTest {
   @Test
   public void testComplexGraphExecution() {
     DAG<LogicalNode> dag = new LogicalPlan();
-    LogicalNode root = new LogicalNode("root", LogOperator.class);
-    LogicalNode leaf = new LogicalNode("leaf", LogOperator.class);
+    LogicalNode root = new LogicalNode("root", LogProcessor.class);
+    LogicalNode leaf = new LogicalNode("leaf", LogProcessor.class);
 
     // sub-path 2
-    LogicalNode node22 = new LogicalNode("22", LogOperator.class);
-    LogicalNode node23 = new LogicalNode("23", LogOperator.class);
-    LogicalNode node24 = new LogicalNode("24", LogOperator.class);
-    LogicalNode node25 = new LogicalNode("25", LogOperator.class);
-    LogicalNode node26 = new LogicalNode("26", LogOperator.class);
-    LogicalNode node27 = new LogicalNode("27", LogOperator.class);
+    LogicalNode node22 = new LogicalNode("22", LogProcessor.class);
+    LogicalNode node23 = new LogicalNode("23", LogProcessor.class);
+    LogicalNode node24 = new LogicalNode("24", LogProcessor.class);
+    LogicalNode node25 = new LogicalNode("25", LogProcessor.class);
+    LogicalNode node26 = new LogicalNode("26", LogProcessor.class);
+    LogicalNode node27 = new LogicalNode("27", LogProcessor.class);
     dag.addEdge(root, node22);
     dag.addEdge(node22, node23);
     dag.addEdge(node22, node24);
@@ -177,7 +177,7 @@ public class DAGExecutorBasicTest {
     dag.addEdge(node27, leaf);
 
     // sub-path 1
-    LogicalNode node12 = new LogicalNode("12", LogOperator.class);
+    LogicalNode node12 = new LogicalNode("12", LogProcessor.class);
     dag.addEdge(root, node12);
     dag.addEdge(node12, leaf);
 
@@ -226,9 +226,9 @@ public class DAGExecutorBasicTest {
   @Test
   public void testFailedChainExecution() {
     DAG<LogicalNode> dag = new LogicalPlan();
-    LogicalNode node1 = new LogicalNode("1", LogOperator.class);
-    LogicalNode node2 = new LogicalNode("2", FailedOperator.class);
-    LogicalNode node3 = new LogicalNode("3", LogOperator.class);
+    LogicalNode node1 = new LogicalNode("1", LogProcessor.class);
+    LogicalNode node2 = new LogicalNode("2", FailedProcessor.class);
+    LogicalNode node3 = new LogicalNode("3", LogProcessor.class);
     dag.addEdge(node1, node2);
     dag.addEdge(node2, node3);
 
@@ -250,11 +250,11 @@ public class DAGExecutorBasicTest {
   /**
    * An operator that appends node name to a list, which is passed in from its incoming nodes.
    */
-  public static class LogOperator implements Operator {
-    private static final Logger LOG = LoggerFactory.getLogger(LogOperator.class);
+  public static class LogProcessor implements Processor {
+    private static final Logger LOG = LoggerFactory.getLogger(LogProcessor.class);
 
     @Override
-    public void initialize(OperatorConfig operatorConfig) {
+    public void initialize(ProcessorConfig processorConfig) {
     }
 
     @Override
@@ -283,9 +283,9 @@ public class DAGExecutorBasicTest {
   /**
    * An operator that always fails.
    */
-  public static class FailedOperator implements Operator {
+  public static class FailedProcessor implements Processor {
     @Override
-    public void initialize(OperatorConfig operatorConfig) {
+    public void initialize(ProcessorConfig processorConfig) {
     }
 
     @Override
