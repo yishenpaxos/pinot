@@ -5,9 +5,9 @@ import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResult;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResults;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
-import com.linkedin.thirdeye.taskexecution.operator.Processor;
-import com.linkedin.thirdeye.taskexecution.operator.ProcessorConfig;
-import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
+import com.linkedin.thirdeye.taskexecution.processor.Processor;
+import com.linkedin.thirdeye.taskexecution.processor.ProcessorConfig;
+import com.linkedin.thirdeye.taskexecution.processor.ProcessorContext;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -258,9 +258,9 @@ public class DAGExecutorBasicTest {
     }
 
     @Override
-    public ExecutionResult run(OperatorContext operatorContext) {
-      LOG.info("Running node: {}", operatorContext.getNodeIdentifier().getName());
-      Map<NodeIdentifier, ExecutionResults> inputs = operatorContext.getInputs();
+    public ExecutionResult run(ProcessorContext processorContext) {
+      LOG.info("Running node: {}", processorContext.getNodeIdentifier().getName());
+      Map<NodeIdentifier, ExecutionResults> inputs = processorContext.getInputs();
       List<String> executionLog = new ArrayList<>();
       for (ExecutionResults parentResult : inputs.values()) {
         Object result = parentResult.getResult(EXECUTION_LOG_KEY).result();
@@ -273,7 +273,7 @@ public class DAGExecutorBasicTest {
           }
         }
       }
-      executionLog.add(operatorContext.getNodeIdentifier().getName());
+      executionLog.add(processorContext.getNodeIdentifier().getName());
       ExecutionResult operatorResult = new ExecutionResult();
       operatorResult.setResult(EXECUTION_LOG_KEY, executionLog);
       return operatorResult;
@@ -289,7 +289,7 @@ public class DAGExecutorBasicTest {
     }
 
     @Override
-    public ExecutionResult run(OperatorContext operatorContext) {
+    public ExecutionResult run(ProcessorContext processorContext) {
       throw new UnsupportedOperationException("Failed in purpose.");
     }
   }

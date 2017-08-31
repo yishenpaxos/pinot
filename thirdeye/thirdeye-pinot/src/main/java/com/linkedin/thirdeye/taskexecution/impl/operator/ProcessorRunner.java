@@ -8,24 +8,24 @@ import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.dag.ExecutionStatus;
 import com.linkedin.thirdeye.taskexecution.impl.dataflow.InMemoryExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.dag.NodeConfig;
-import com.linkedin.thirdeye.taskexecution.operator.Processor;
-import com.linkedin.thirdeye.taskexecution.operator.ProcessorConfig;
-import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
+import com.linkedin.thirdeye.taskexecution.processor.Processor;
+import com.linkedin.thirdeye.taskexecution.processor.ProcessorConfig;
+import com.linkedin.thirdeye.taskexecution.processor.ProcessorContext;
 import java.util.Map;
 
 /**
- * OperatorRunner considers multi-threading.
+ * ProcessorRunner considers multi-threading.
  */
-public class OperatorRunner<K, V> extends AbstractOperatorRunner {
+public class ProcessorRunner<K, V> extends AbstractProcessorRunner {
 
   private ExecutionResults<K, V> executionResults;
 
 
-  public OperatorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass) {
+  public ProcessorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass) {
     this(nodeIdentifier, nodeConfig, operatorClass, null);
   }
 
-  private OperatorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass,
+  private ProcessorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass,
       FrameworkNode logicalNode) {
     super(ensureNonNullNodeIdentifier(nodeIdentifier), nodeConfig, operatorClass, logicalNode);
     this.executionResults = new ExecutionResults<>(nodeIdentifier);
@@ -52,7 +52,7 @@ public class OperatorRunner<K, V> extends AbstractOperatorRunner {
    * Invokes the execution of the operator that is define for the corresponding node in the DAG and returns its node
    * identifier.
    *
-   * @return the node identifier of this node (i.e., OperatorRunner).
+   * @return the node identifier of this node (i.e., ProcessorRunner).
    */
   @Override
   public NodeIdentifier call() {
@@ -67,10 +67,10 @@ public class OperatorRunner<K, V> extends AbstractOperatorRunner {
         try {
           ProcessorConfig processorConfig = convertNodeConfigToOperatorConfig(nodeConfig);
           Processor processor = initializeOperator(operatorClass, processorConfig);
-          OperatorContext operatorContext =
+          ProcessorContext processorContext =
               buildInputOperatorContext(nodeIdentifier, incomingResultsReaderMap, nodeConfig.runWithEmptyInput());
-          if (operatorContext != null) {
-            ExecutionResult<K, V> operatorResult = processor.run(operatorContext);
+          if (processorContext != null) {
+            ExecutionResult<K, V> operatorResult = processor.run(processorContext);
             executionResults.addResult(operatorResult);
           }
         } catch (Exception e) {
@@ -88,11 +88,11 @@ public class OperatorRunner<K, V> extends AbstractOperatorRunner {
     return identifier;
   }
 
-  static OperatorContext buildInputOperatorContext(NodeIdentifier nodeIdentifier,
+  static ProcessorContext buildInputOperatorContext(NodeIdentifier nodeIdentifier,
       Map<NodeIdentifier, ExecutionResultsReader> incomingResultsReader, boolean allowEmptyIncomingResult) {
 
-    OperatorContext operatorContext = new OperatorContext();
-    operatorContext.setNodeIdentifier(nodeIdentifier);
+    ProcessorContext processorContext = new ProcessorContext();
+    processorContext.setNodeIdentifier(nodeIdentifier);
     for (Map.Entry<NodeIdentifier, ExecutionResultsReader> nodeReadersEntry : incomingResultsReader.entrySet()) {
       ExecutionResults executionResults = new ExecutionResults<>(nodeReadersEntry.getKey());
       ExecutionResultsReader reader = nodeReadersEntry.getValue();
@@ -100,11 +100,11 @@ public class OperatorRunner<K, V> extends AbstractOperatorRunner {
         executionResults.addResult(reader.next());
       }
       if (executionResults.size() > 0) {
-        operatorContext.addResults(nodeReadersEntry.getKey(), executionResults);
+        processorContext.addResults(nodeReadersEntry.getKey(), executionResults);
       }
     }
-    if (operatorContext.size() != 0 || allowEmptyIncomingResult) {
-      return operatorContext;
+    if (processorContext.size() != 0 || allowEmptyIncomingResult) {
+      return processorContext;
     } else {
       return null;
     }

@@ -5,7 +5,7 @@ import com.linkedin.thirdeye.taskexecution.dag.FrameworkNode;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.dataflow.InMemoryExecutionResultsReader;
-import com.linkedin.thirdeye.taskexecution.impl.operator.OperatorRunner;
+import com.linkedin.thirdeye.taskexecution.impl.operator.ProcessorRunner;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -52,7 +52,7 @@ public class LogicalNode<K, V> extends AbstractLogicalNode<LogicalNode> {
 
   @Override
   public NodeIdentifier call() throws Exception {
-    OperatorRunner runner = new OperatorRunner(nodeIdentifier, nodeConfig, operatorClass);
+    ProcessorRunner runner = new ProcessorRunner(nodeIdentifier, nodeConfig, operatorClass);
     physicalNodes.add(runner);
 
     for (FrameworkNode pNode : this.getIncomingNodes()) {

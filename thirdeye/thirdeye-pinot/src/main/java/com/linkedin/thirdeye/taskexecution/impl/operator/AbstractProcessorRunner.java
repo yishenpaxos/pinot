@@ -5,8 +5,8 @@ import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.dag.ExecutionStatus;
 import com.linkedin.thirdeye.taskexecution.impl.dag.NodeConfig;
-import com.linkedin.thirdeye.taskexecution.operator.Processor;
-import com.linkedin.thirdeye.taskexecution.operator.ProcessorConfig;
+import com.linkedin.thirdeye.taskexecution.processor.Processor;
+import com.linkedin.thirdeye.taskexecution.processor.ProcessorConfig;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -14,14 +14,14 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class AbstractOperatorRunner extends FrameworkNode {
-  private static final Logger LOG = LoggerFactory.getLogger(AbstractOperatorRunner.class);
+public abstract class AbstractProcessorRunner extends FrameworkNode {
+  private static final Logger LOG = LoggerFactory.getLogger(AbstractProcessorRunner.class);
 
   private FrameworkNode logicalNode;
   protected Map<NodeIdentifier, ExecutionResultsReader> incomingResultsReaderMap = new HashMap<>();
   protected ExecutionStatus executionStatus = ExecutionStatus.RUNNING;
 
-  public AbstractOperatorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass,
+  public AbstractProcessorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass,
       FrameworkNode logicalNode) {
     super(nodeIdentifier, nodeConfig, operatorClass);
     this.logicalNode = logicalNode;

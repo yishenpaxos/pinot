@@ -7,9 +7,9 @@ import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.dag.ExecutionStatus;
 import com.linkedin.thirdeye.taskexecution.impl.dataflow.InMemoryExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.dag.NodeConfig;
-import com.linkedin.thirdeye.taskexecution.operator.Processor;
-import com.linkedin.thirdeye.taskexecution.operator.ProcessorConfig;
-import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
+import com.linkedin.thirdeye.taskexecution.processor.Processor;
+import com.linkedin.thirdeye.taskexecution.processor.ProcessorConfig;
+import com.linkedin.thirdeye.taskexecution.processor.ProcessorContext;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -24,7 +24,7 @@ public class ParallelProcessorRunnerTest {
   @Test
   public void testCreation() {
     try {
-      new ParallelOperatorRunner(new NodeIdentifier(), new NodeConfig(), ProcessorRunnerTest.DummyProcessor.class);
+      new ParallelProcessorRunner(new NodeIdentifier(), new NodeConfig(), ProcessorRunnerTest.DummyProcessor.class);
     } catch (Exception e) {
       Assert.fail();
     }
@@ -60,14 +60,14 @@ public class ParallelProcessorRunnerTest {
       incomingResultsReader.put(node3Identifier, reader3);
     }
 
-    List<OperatorContext> operatorContextList = ParallelOperatorRunner
+    List<ProcessorContext> processorContextList = ParallelProcessorRunner
         .buildInputOperatorContext(new NodeIdentifier("OperatorContextBuilder"), incomingResultsReader);
 
-    Assert.assertTrue(CollectionUtils.isNotEmpty(operatorContextList));
-    Assert.assertEquals(operatorContextList.size(), 3);
+    Assert.assertTrue(CollectionUtils.isNotEmpty(processorContextList));
+    Assert.assertEquals(processorContextList.size(), 3);
 
-    for (OperatorContext operatorContext : operatorContextList) {
-      Map<NodeIdentifier, ExecutionResults> inputs = operatorContext.getInputs();
+    for (ProcessorContext processorContext : processorContextList) {
+      Map<NodeIdentifier, ExecutionResults> inputs = processorContext.getInputs();
       Set<String> keySet = new HashSet<>();
       for (Map.Entry<NodeIdentifier, ExecutionResults> nodeExecutionResultsEntry : inputs.entrySet()) {
         ExecutionResults<String, Integer> executionResults = nodeExecutionResultsEntry.getValue();
@@ -111,8 +111,8 @@ public class ParallelProcessorRunnerTest {
     executionResults.addResult(executionResult);
     ExecutionResultsReader reader = new InMemoryExecutionResultsReader<>(executionResults);
 
-    ParallelOperatorRunner runner =
-        new ParallelOperatorRunner(new NodeIdentifier(), nodeConfig, DummyProcessor.class);
+    ParallelProcessorRunner runner =
+        new ParallelProcessorRunner(new NodeIdentifier(), nodeConfig, DummyProcessor.class);
     runner.addIncomingExecutionResultReader(new NodeIdentifier("DummyNode"), reader);
     runner.call();
     Assert.assertEquals(runner.getExecutionStatus(), ExecutionStatus.SUCCESS);
@@ -139,8 +139,8 @@ public class ParallelProcessorRunnerTest {
     n2ExecutionResults.addResult(n2ExecutionResult);
     ExecutionResultsReader node2Reader = new InMemoryExecutionResultsReader<>(n2ExecutionResults);
 
-    ParallelOperatorRunner runner =
-        new ParallelOperatorRunner(new NodeIdentifier(), nodeConfig, DummyProcessor.class);
+    ParallelProcessorRunner runner =
+        new ParallelProcessorRunner(new NodeIdentifier(), nodeConfig, DummyProcessor.class);
     runner.addIncomingExecutionResultReader(new NodeIdentifier("DummyParent1"), node1Reader);
     runner.addIncomingExecutionResultReader(new NodeIdentifier("DummyParent2"), node2Reader);
     runner.call();
@@ -174,8 +174,8 @@ public class ParallelProcessorRunnerTest {
     }
 
     @Override
-    public ExecutionResult run(OperatorContext operatorContext) {
-      Map<NodeIdentifier, ExecutionResults> inputs = operatorContext.getInputs();
+    public ExecutionResult run(ProcessorContext processorContext) {
+      Map<NodeIdentifier, ExecutionResults> inputs = processorContext.getInputs();
       Set keySet = new HashSet();
       for (ExecutionResults executionResults : inputs.values()) {
         keySet.addAll(executionResults.keySet());

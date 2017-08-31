@@ -7,9 +7,9 @@ import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.dag.ExecutionStatus;
 import com.linkedin.thirdeye.taskexecution.impl.dataflow.InMemoryExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.dag.NodeConfig;
-import com.linkedin.thirdeye.taskexecution.operator.Processor;
-import com.linkedin.thirdeye.taskexecution.operator.ProcessorConfig;
-import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
+import com.linkedin.thirdeye.taskexecution.processor.Processor;
+import com.linkedin.thirdeye.taskexecution.processor.ProcessorConfig;
+import com.linkedin.thirdeye.taskexecution.processor.ProcessorContext;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.collections.MapUtils;
@@ -22,7 +22,7 @@ public class ProcessorRunnerTest {
   @Test
   public void testCreation() {
     try {
-      new OperatorRunner(new NodeIdentifier(), new NodeConfig(), DummyProcessor.class);
+      new ProcessorRunner(new NodeIdentifier(), new NodeConfig(), DummyProcessor.class);
     } catch (Exception e) {
       Assert.fail();
     }
@@ -59,13 +59,13 @@ public class ProcessorRunnerTest {
     }
 
     final boolean allowEmptyInput = false;
-    OperatorContext operatorContext = OperatorRunner
+    ProcessorContext processorContext = ProcessorRunner
         .buildInputOperatorContext(new NodeIdentifier("OperatorContextBuilder"), incomingResultsReader,
             allowEmptyInput);
-    Assert.assertNotNull(operatorContext);
+    Assert.assertNotNull(processorContext);
 
-    Assert.assertEquals(operatorContext.getNodeIdentifier(), new NodeIdentifier("OperatorContextBuilder"));
-    Map<NodeIdentifier, ExecutionResults> inputs = operatorContext.getInputs();
+    Assert.assertEquals(processorContext.getNodeIdentifier(), new NodeIdentifier("OperatorContextBuilder"));
+    Map<NodeIdentifier, ExecutionResults> inputs = processorContext.getInputs();
     Assert.assertTrue(MapUtils.isNotEmpty(inputs));
     ExecutionResults<String, Integer> executionResults1 = inputs.get(node1Identifier);
     Assert.assertEquals(executionResults1.keySet().size(), 2);
@@ -84,16 +84,16 @@ public class ProcessorRunnerTest {
     Map<NodeIdentifier, ExecutionResultsReader> incomingResultsReader = new HashMap<>();
 
     boolean allowEmptyInput = false;
-    OperatorContext operatorContextNull = OperatorRunner
+    ProcessorContext processorContextNull = ProcessorRunner
         .buildInputOperatorContext(new NodeIdentifier("OperatorContextBuilder"), incomingResultsReader,
             allowEmptyInput);
-    Assert.assertNull(operatorContextNull);
+    Assert.assertNull(processorContextNull);
 
     allowEmptyInput = true;
-    OperatorContext operatorContextNotNull = OperatorRunner
+    ProcessorContext processorContextNotNull = ProcessorRunner
         .buildInputOperatorContext(new NodeIdentifier("OperatorContextBuilder"), incomingResultsReader,
             allowEmptyInput);
-    Assert.assertNotNull(operatorContextNotNull);
+    Assert.assertNotNull(processorContextNotNull);
   }
 
   @Test
@@ -107,7 +107,7 @@ public class ProcessorRunnerTest {
     executionResults.addResult(executionResult);
     ExecutionResultsReader reader = new InMemoryExecutionResultsReader<>(executionResults);
 
-    OperatorRunner runner = new OperatorRunner(new NodeIdentifier(), nodeConfig, DummyProcessor.class);
+    ProcessorRunner runner = new ProcessorRunner(new NodeIdentifier(), nodeConfig, DummyProcessor.class);
     runner.addIncomingExecutionResultReader(new NodeIdentifier("DummyNode"), reader);
     runner.call();
     Assert.assertEquals(runner.getExecutionStatus(), ExecutionStatus.SUCCESS);
@@ -123,7 +123,7 @@ public class ProcessorRunnerTest {
     NodeConfig nodeConfig = new NodeConfig();
     nodeConfig.setSkipAtFailure(false);
     nodeConfig.setNumRetryAtError(1);
-    OperatorRunner runner = new OperatorRunner(new NodeIdentifier(), nodeConfig, FailedRunProcessor.class);
+    ProcessorRunner runner = new ProcessorRunner(new NodeIdentifier(), nodeConfig, FailedRunProcessor.class);
     runner.call();
     Assert.assertEquals(runner.getExecutionStatus(), ExecutionStatus.FAILED);
   }
@@ -133,14 +133,14 @@ public class ProcessorRunnerTest {
     NodeConfig nodeConfig = new NodeConfig();
     nodeConfig.setSkipAtFailure(true);
     nodeConfig.setNumRetryAtError(2);
-    OperatorRunner runner = new OperatorRunner(new NodeIdentifier(), nodeConfig, FailedRunProcessor.class);
+    ProcessorRunner runner = new ProcessorRunner(new NodeIdentifier(), nodeConfig, FailedRunProcessor.class);
     runner.call();
     Assert.assertEquals(runner.getExecutionStatus(), ExecutionStatus.SKIPPED);
   }
 
   @Test
   public void testNullIdentifier() {
-    OperatorRunner runner = new OperatorRunner(null, new NodeConfig(), DummyProcessor.class);
+    ProcessorRunner runner = new ProcessorRunner(null, new NodeConfig(), DummyProcessor.class);
     NodeIdentifier nodeIdentifier = runner.call();
     Assert.assertEquals(runner.getExecutionStatus(), ExecutionStatus.SUCCESS);
     Assert.assertNotNull(nodeIdentifier);
@@ -153,7 +153,7 @@ public class ProcessorRunnerTest {
     }
 
     @Override
-    public ExecutionResult run(OperatorContext operatorContext) {
+    public ExecutionResult run(ProcessorContext processorContext) {
       return new ExecutionResult<>("I am a Dummy", 0);
     }
   }
@@ -164,7 +164,7 @@ public class ProcessorRunnerTest {
     }
 
     @Override
-    public ExecutionResult run(OperatorContext operatorContext) {
+    public ExecutionResult run(ProcessorContext processorContext) {
       throw new UnsupportedOperationException("Failed during running IN PURPOSE.");
     }
   }

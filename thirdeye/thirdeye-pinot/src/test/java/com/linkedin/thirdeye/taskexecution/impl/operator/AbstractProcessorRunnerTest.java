@@ -1,9 +1,9 @@
 package com.linkedin.thirdeye.taskexecution.impl.operator;
 
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResult;
-import com.linkedin.thirdeye.taskexecution.operator.Processor;
-import com.linkedin.thirdeye.taskexecution.operator.ProcessorConfig;
-import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
+import com.linkedin.thirdeye.taskexecution.processor.Processor;
+import com.linkedin.thirdeye.taskexecution.processor.ProcessorConfig;
+import com.linkedin.thirdeye.taskexecution.processor.ProcessorContext;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -11,13 +11,13 @@ public class AbstractProcessorRunnerTest {
 
   @Test
   public void testSuccessInitializeOperator() throws InstantiationException, IllegalAccessException {
-    AbstractOperatorRunner.initializeOperator(ProcessorRunnerTest.DummyProcessor.class, new ProcessorConfig());
+    AbstractProcessorRunner.initializeOperator(ProcessorRunnerTest.DummyProcessor.class, new ProcessorConfig());
   }
 
   @Test
   public void testFailureInitializeOperator() {
     try {
-      AbstractOperatorRunner.initializeOperator(FailedInitializedProcessor.class, new ProcessorConfig());
+      AbstractProcessorRunner.initializeOperator(FailedInitializedProcessor.class, new ProcessorConfig());
     } catch (Exception e) {
       return;
     }
@@ -31,7 +31,7 @@ public class AbstractProcessorRunnerTest {
     }
 
     @Override
-    public ExecutionResult run(OperatorContext operatorContext) {
+    public ExecutionResult run(ProcessorContext processorContext) {
       return new ExecutionResult();
     }
   }

@@ -1,4 +1,4 @@
-package com.linkedin.thirdeye.taskexecution.operator;
+package com.linkedin.thirdeye.taskexecution.processor;
 
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionContext;
@@ -6,14 +6,14 @@ import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResults;
 import java.util.HashMap;
 import java.util.Map;
 
-public class OperatorContext implements ExecutionContext<ExecutionResults> {
+public class ProcessorContext implements ExecutionContext<ExecutionResults> {
   private NodeIdentifier nodeIdentifier;
   private Map<NodeIdentifier, ExecutionResults> inputs = new HashMap<>();
 
-  public OperatorContext() {
+  public ProcessorContext() {
   }
 
-  public OperatorContext(NodeIdentifier nodeIdentifier) {
+  public ProcessorContext(NodeIdentifier nodeIdentifier) {
     this.nodeIdentifier = nodeIdentifier;
   }
 

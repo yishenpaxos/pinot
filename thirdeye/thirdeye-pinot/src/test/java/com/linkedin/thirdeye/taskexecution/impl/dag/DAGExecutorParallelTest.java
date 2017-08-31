@@ -4,9 +4,9 @@ import com.linkedin.thirdeye.taskexecution.dag.DAG;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResult;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResults;
-import com.linkedin.thirdeye.taskexecution.operator.Processor;
-import com.linkedin.thirdeye.taskexecution.operator.ProcessorConfig;
-import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
+import com.linkedin.thirdeye.taskexecution.processor.Processor;
+import com.linkedin.thirdeye.taskexecution.processor.ProcessorConfig;
+import com.linkedin.thirdeye.taskexecution.processor.ProcessorContext;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -57,15 +57,15 @@ public class DAGExecutorParallelTest {
     }
 
     @Override
-    public ExecutionResult run(OperatorContext operatorContext) {
-      LOG.info("Running node: {}", operatorContext.getNodeIdentifier().getName());
+    public ExecutionResult run(ProcessorContext processorContext) {
+      LOG.info("Running node: {}", processorContext.getNodeIdentifier().getName());
       Map<String, List<String>> executionLogs = new HashMap<>();
       List<String> list1 = new ArrayList<>();
-      list1.add(operatorContext.getNodeIdentifier().getName());
+      list1.add(processorContext.getNodeIdentifier().getName());
       executionLogs.put(EXECUTION_LOG_KEY1, list1);
 
       List<String> list2 = new ArrayList<>();
-      list2.add(operatorContext.getNodeIdentifier().getName());
+      list2.add(processorContext.getNodeIdentifier().getName());
       executionLogs.put(EXECUTION_LOG_KEY2, list2);
 
       ExecutionResult operatorResult = new ExecutionResult();
@@ -86,9 +86,9 @@ public class DAGExecutorParallelTest {
     }
 
     @Override
-    public ExecutionResult run(OperatorContext operatorContext) {
-      LOG.info("Running node: {}", operatorContext.getNodeIdentifier().getName());
-      Map<NodeIdentifier, ExecutionResults> inputs = operatorContext.getInputs();
+    public ExecutionResult run(ProcessorContext processorContext) {
+      LOG.info("Running node: {}", processorContext.getNodeIdentifier().getName());
+      Map<NodeIdentifier, ExecutionResults> inputs = processorContext.getInputs();
       List<String> executionLog = new ArrayList<>();
       String uniqueKey = "";
       for (ExecutionResults parentResult : inputs.values()) {
@@ -104,7 +104,7 @@ public class DAGExecutorParallelTest {
         }
         uniqueKey = key;
       }
-      executionLog.add(operatorContext.getNodeIdentifier().getName());
+      executionLog.add(processorContext.getNodeIdentifier().getName());
       ExecutionResult operatorResult = new ExecutionResult();
       operatorResult.setResult(uniqueKey, executionLog);
       return operatorResult;

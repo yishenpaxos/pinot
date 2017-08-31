@@ -1,4 +1,4 @@
-package com.linkedin.thirdeye.taskexecution.operator;
+package com.linkedin.thirdeye.taskexecution.processor;
 
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResult;
 
@@ -6,5 +6,5 @@ public interface Processor {
 
   void initialize(ProcessorConfig processorConfig);
 
-  ExecutionResult run(OperatorContext operatorContext);
+  ExecutionResult run(ProcessorContext processorContext);
 }
