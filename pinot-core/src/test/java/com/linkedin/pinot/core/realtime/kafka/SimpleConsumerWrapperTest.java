@@ -106,17 +106,16 @@ public class SimpleConsumerWrapperTest {
   }
 
   private class MockSimpleConsumer extends SimpleConsumer {
-    private int _index;
     private String _topicName = "topic";
-    private String host = "node1";
-    private int port = 1234;
     private BrokerEndPoint[] brokerArray;
     public MockSimpleConsumer(String host, int port, int soTimeout, int bufferSize, String clientId, int index) {
       super(host, port, soTimeout, bufferSize, clientId);
-      this._index = index;
 
-      brokerArray = new BrokerEndPoint[1];
+      brokerArray = new BrokerEndPoint[2];
       brokerArray[0] = new BrokerEndPoint(0, host, port);
+      brokerArray[1] = new BrokerEndPoint(1, host, port);
+//      brokerArray[0] = new BrokerEndPoint(0, "node1", 1234);
+//      brokerArray[1] = new BrokerEndPoint(1, "node2", 2345);
     }
 
     @Override
@@ -160,6 +159,10 @@ public class SimpleConsumerWrapperTest {
       kafka.api.TopicMetadata[] topicMetadataArray = new kafka.api.TopicMetadata[topics.size()];
       int partitionCount = 2;
 
+      int[] partitionLeaderIndices = new int[2];
+      partitionLeaderIndices[0] = 0;
+      partitionLeaderIndices[1] = 1;
+
       for (int i = 0; i < topicMetadataArray.length; i++) {
         String topic = topics.get(i);
         if (!topic.equals(_topicName)) {
@@ -170,7 +173,7 @@ public class SimpleConsumerWrapperTest {
             java.util.List<BrokerEndPoint> emptyJavaList = Collections.emptyList();
             List<BrokerEndPoint> emptyScalaList = JavaConversions.asScalaBuffer(emptyJavaList).toList();
             partitionMetadataArray[j] = new kafka.api.PartitionMetadata(j, Some
-                .apply(brokerArray[0]),
+                .apply(brokerArray[partitionLeaderIndices[j]]),
                 emptyScalaList, emptyScalaList, Errors.NONE.code());
           }
 
