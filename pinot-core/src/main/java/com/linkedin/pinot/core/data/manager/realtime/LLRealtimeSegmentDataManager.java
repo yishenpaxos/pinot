@@ -56,10 +56,13 @@ import com.yammer.metrics.core.Meter;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -357,7 +360,25 @@ public class LLRealtimeSegmentDataManager extends RealtimeSegmentDataManager {
     return true;
   }
 
-  private void processKafkaEvents(PinotKafkaMessagesIterable messagesAndOffsets, Long highWatermark, long idlePipeSleepTimeMillis) {
+  /**
+   * Callable class to retrieve a KafkaMessageAndOffset record type to index.
+   * <p>Throw exception when retrival failed.
+   */
+  private static class RetrieveKafkaMessageCallable implements Callable<PinotKafkaMessageAndOffset> {
+    private final PinotKafkaMessagesIterable _pinotKafkaMessagesIterable;
+
+    public RetrieveKafkaMessageCallable(PinotKafkaMessagesIterable pinotKafkaMessagesIterable) {
+      _pinotKafkaMessagesIterable = pinotKafkaMessagesIterable;
+    }
+
+    @Override
+    public PinotKafkaMessageAndOffset call()
+        throws Exception {
+      return _pinotKafkaMessagesIterable.decodeMessage();
+    }
+  }
+
+  private void processKafkaEvents(final PinotKafkaMessagesIterable messagesAndOffsets, Long highWatermark, long idlePipeSleepTimeMillis) {
     Meter realtimeRowsConsumedMeter = null;
     Meter realtimeRowsDroppedMeter = null;
 
@@ -366,8 +387,8 @@ public class LLRealtimeSegmentDataManager extends RealtimeSegmentDataManager {
     boolean canTakeMore = true;
     GenericRow decodedRow = null;
     GenericRow transformedRow = null;
-    Iterator msgIterator = messagesAndOffsets.iterator();
-    while (!_shouldStop && !endCriteriaReached() && msgIterator.hasNext()) {
+
+    while (!_shouldStop && !endCriteriaReached() && messagesAndOffsets.iterator().hasNext()) {
       if (!canTakeMore) {
         // The RealtimeSegmentImpl that we are pushing rows into has indicated that it cannot accept any more
         // rows. This can happen in one of two conditions:
@@ -386,45 +407,65 @@ public class LLRealtimeSegmentDataManager extends RealtimeSegmentDataManager {
         segmentLogger.error("Buffer full with {} rows consumed (row limit {})", _numRowsConsumed, _segmentMaxRowCount);
         throw new RuntimeException("Realtime segment full");
       }
-      // Index each message
-      PinotKafkaMessageAndOffset pinotKafkaMessageAndOffset = (messagesAndOffsets).decodeMessageAndOffset(decodedRow, msgIterator.next(), _messageDecoder);
-      decodedRow = pinotKafkaMessageAndOffset.getDecodedRow();
 
-      // Update lag metric on the first message of each batch
-      if (kafkaMessageCount == 0) {
-        long messageOffset = pinotKafkaMessageAndOffset.getOffset();
-        long offsetDifference = highWatermark - messageOffset;
-        _serverMetrics.setValueOfTableGauge(_metricKeyName, ServerGauge.KAFKA_PARTITION_OFFSET_LAG, offsetDifference);
-      }
+      ExecutorService fixedPoolPerColo = Executors.newFixedThreadPool(1);
+      Future<?> future = fixedPoolPerColo.submit(new RetrieveKafkaMessageCallable(messagesAndOffsets));
+      try {
+        PinotKafkaMessageAndOffset pinotKafkaMessageAndOffset = (PinotKafkaMessageAndOffset) future.get();
 
-      if (decodedRow != null) {
-        transformedRow = GenericRow.createOrReuseRow(transformedRow);
-        transformedRow = _fieldExtractor.transform(decodedRow, transformedRow);
-
-        if (transformedRow != null) {
-          realtimeRowsConsumedMeter = _serverMetrics.addMeteredTableValue(_metricKeyName, ServerMeter.REALTIME_ROWS_CONSUMED, 1, realtimeRowsConsumedMeter);
-          indexedMessageCount++;
-        } else {
-          realtimeRowsDroppedMeter = _serverMetrics.addMeteredTableValue(_metricKeyName, ServerMeter.INVALID_REALTIME_ROWS_DROPPED, 1, realtimeRowsDroppedMeter);
+        // Update lag metric on the first message of each batch
+        if (kafkaMessageCount == 0) {
+          long messageOffset = pinotKafkaMessageAndOffset.getOffset();
+          long offsetDifference = highWatermark - messageOffset;
+          _serverMetrics.setValueOfTableGauge(_metricKeyName, ServerGauge.KAFKA_PARTITION_OFFSET_LAG, offsetDifference);
         }
 
-        canTakeMore = _realtimeSegment.index(transformedRow);
-      } else {
-        realtimeRowsDroppedMeter = _serverMetrics.addMeteredTableValue(_metricKeyName, ServerMeter.INVALID_REALTIME_ROWS_DROPPED, 1, realtimeRowsDroppedMeter);
-      }
+        decodedRow = pinotKafkaMessageAndOffset.getDecodedRow();
 
-      _currentOffset = pinotKafkaMessageAndOffset.getNextOffset();
-      _numRowsConsumed++;
-      kafkaMessageCount++;
-    }
-    updateCurrentDocumentCountMetrics();
-    if (kafkaMessageCount != 0) {
-      segmentLogger.debug("Indexed {} messages ({} messages read from Kafka) current offset {}", indexedMessageCount,
-          kafkaMessageCount, _currentOffset);
-    } else {
-      // If there were no messages to be fetched from Kafka, wait for a little bit as to avoid hammering the
-      // Kafka broker
-      Uninterruptibles.sleepUninterruptibly(idlePipeSleepTimeMillis, TimeUnit.MILLISECONDS);
+        if (decodedRow != null) {
+          transformedRow = GenericRow.createOrReuseRow(transformedRow);
+          transformedRow = _fieldExtractor.transform(decodedRow, transformedRow);
+          decodedRow.clear();
+
+          if (transformedRow != null) {
+            realtimeRowsConsumedMeter = _serverMetrics
+                .addMeteredTableValue(_metricKeyName, ServerMeter.REALTIME_ROWS_CONSUMED, 1, realtimeRowsConsumedMeter);
+            indexedMessageCount++;
+          } else {
+            realtimeRowsDroppedMeter = _serverMetrics
+                .addMeteredTableValue(_metricKeyName, ServerMeter.INVALID_REALTIME_ROWS_DROPPED, 1,
+                    realtimeRowsDroppedMeter);
+          }
+
+          canTakeMore = _realtimeSegment.index(transformedRow);
+        } else {
+          realtimeRowsDroppedMeter = _serverMetrics
+              .addMeteredTableValue(_metricKeyName, ServerMeter.INVALID_REALTIME_ROWS_DROPPED, 1,
+                  realtimeRowsDroppedMeter);
+        }
+
+        _currentOffset = pinotKafkaMessageAndOffset.getNextOffset();
+        _numRowsConsumed++;
+        kafkaMessageCount++;
+
+        updateCurrentDocumentCountMetrics();
+        if (kafkaMessageCount != 0) {
+          segmentLogger
+              .debug("Indexed {} messages ({} messages read from Kafka) current offset {}", indexedMessageCount,
+                  kafkaMessageCount, _currentOffset);
+
+          messagesAndOffsets.iterator().next();
+        } else {
+          // If there were no messages to be fetched from Kafka, wait for a little bit as to avoid hammering the
+          // Kafka broker
+          Uninterruptibles.sleepUninterruptibly(idlePipeSleepTimeMillis, TimeUnit.MILLISECONDS);
+        }
+      } catch (Exception e) {
+        LOGGER.error("Could not retrieve event from kafka");
+        throw new RuntimeException(e);
+      } finally {
+        fixedPoolPerColo.shutdownNow();
+      }
     }
   }
 

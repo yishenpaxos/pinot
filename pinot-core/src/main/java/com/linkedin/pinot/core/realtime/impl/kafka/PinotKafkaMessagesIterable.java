@@ -16,14 +16,13 @@
 
 package com.linkedin.pinot.core.realtime.impl.kafka;
 
-import com.linkedin.pinot.core.data.GenericRow;
 import java.util.Iterator;
 
 
 public interface PinotKafkaMessagesIterable extends Iterable {
   PinotKafkaMessagesIterable getMessages();
 
-  PinotKafkaMessageAndOffset decodeMessageAndOffset(GenericRow decodedRow, Object message, Object decoder);
-
   Iterator<PinotKafkaMessagesIterable> iterator();
+
+  PinotKafkaMessageAndOffset decodeMessage();
 }
