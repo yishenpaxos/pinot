@@ -327,6 +327,8 @@ public class TableConfig {
     private TableTaskConfig _taskConfig;
     private RoutingConfig _routingConfig;
 
+    private boolean _generateInvertedIndexBeforePush;
+
     public Builder(TableType tableType) {
       _tableType = tableType;
     }
@@ -426,6 +428,11 @@ public class TableConfig {
       return this;
     }
 
+    public Builder setGenerateInvertedIndexColumnsBeforePush(boolean generateInvertedIndexColumnsBeforePush) {
+      _generateInvertedIndexBeforePush = generateInvertedIndexColumnsBeforePush;
+      return this;
+    }
+
     public Builder setNoDictionaryColumns(List<String> noDictionaryColumns) {
       _noDictionaryColumns = noDictionaryColumns;
       return this;
@@ -495,6 +502,7 @@ public class TableConfig {
       indexingConfig.setNoDictionaryColumns(_noDictionaryColumns);
       indexingConfig.setOnHeapDictionaryColumns(_onHeapDictionaryColumns);
       indexingConfig.setStreamConfigs(_streamConfigs);
+      indexingConfig.setGenerateInvertedIndexBeforePush(_generateInvertedIndexBeforePush);
       // TODO: set SegmentPartitionConfig here
 
       if (_customConfig == null) {
