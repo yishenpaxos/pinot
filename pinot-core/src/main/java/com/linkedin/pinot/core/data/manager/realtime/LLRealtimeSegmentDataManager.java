@@ -61,7 +61,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import kafka.message.MessageAndOffset;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,6 +69,11 @@ import org.slf4j.LoggerFactory;
  * Segment data manager for low level consumer realtime segments, which manages consumption and segment completion.
  */
 public class LLRealtimeSegmentDataManager extends RealtimeSegmentDataManager {
+  private static class PinotKafkaConsumerFactory {
+    PinotKafkaConsumer buldConsumer() {
+      return null;
+    }
+  }
   protected enum State {
     // The state machine starts off with this state. While in this state we consume kafka events
     // and index them in memory. We continue to be in this state until the end criteria is satisfied
@@ -175,7 +179,7 @@ public class LLRealtimeSegmentDataManager extends RealtimeSegmentDataManager {
   // Segment end criteria
   private volatile long _consumeEndTime = 0;
   private volatile long _finalOffset = -1;
-  private volatile boolean _shouldStop = false;
+  private volatile Boolean _shouldStop = false;
 
   // It takes 30s to locate controller leader, and more if there are multiple controller failures.
   // For now, we let 31s pass for this state transition.
@@ -207,6 +211,8 @@ public class LLRealtimeSegmentDataManager extends RealtimeSegmentDataManager {
   private long _lastLogTime = 0;
   private int _lastConsumedCount = 0;
   private String _stopReason = null;
+  private final PinotKafkaConsumerFactory _consumerFactory = new PinotKafkaConsumerFactory();
+  private final PinotKafkaConsumer _consumer;
 
 
   // TODO each time this method is called, we print reason for stop. Good to print only once.
@@ -292,22 +298,21 @@ public class LLRealtimeSegmentDataManager extends RealtimeSegmentDataManager {
     long idleCount = 0;
     // At this point, we know that we can potentially move the offset, so the old saved segment file is not valid
     // anymore. Remove the file if it exists.
+
     removeSegmentFile();
+    long timeoutMillis = 5000;
 
     final long _endOffset = Long.MAX_VALUE; // No upper limit on Kafka offset
     segmentLogger.info("Starting consumption loop start offset {}, finalOffset {}", _currentOffset, _finalOffset);
     while(!_shouldStop && !endCriteriaReached()) {
+
       // Consume for the next _kafkaReadTime ms, or we get to final offset, whichever happens earlier,
       // Update _currentOffset upon return from this method
-      Iterable<MessageAndOffset> messagesAndOffsets = null;
-      Long highWatermark = null;
+      KafkaMessageProcessor processor = new KafkaMessageProcessor(
+          _segmentMaxRowCount - _numRowsConsumed, _shouldStop, _serverMetrics,
+          _metricKeyName, _fieldExtractor, _realtimeSegment);
       try {
-        Pair<Iterable<MessageAndOffset>, Long> messagesAndWatermark =
-            _consumerWrapper.fetchMessagesAndHighWatermark(_currentOffset, _endOffset,
-                _kafkaStreamMetadata.getKafkaFetchTimeoutMillis());
-        consecutiveErrorCount = 0;
-        messagesAndOffsets = messagesAndWatermark.getLeft();
-        highWatermark = messagesAndWatermark.getRight();
+        _consumer.consumeMessages(timeoutMillis, processor);
       } catch (TimeoutException e) {
         handleTransientKafkaErrors(e);
         continue;
@@ -324,7 +329,10 @@ public class LLRealtimeSegmentDataManager extends RealtimeSegmentDataManager {
         continue;
       }
 
-      processKafkaEvents(messagesAndOffsets, highWatermark, idlePipeSleepTimeMillis);
+      _currentOffset = processor.getCurrentOffset();
+      _numRowsConsumed += processor.getNumRowsConsumed();
+
+//      processKafkaEvents(messagesAndOffsets, highWatermark, idlePipeSleepTimeMillis);
 
       if (_currentOffset != lastUpdatedOffset) {
         // We consumed something. Update the highest kafka offset as well as partition-consuming metric.
@@ -871,6 +879,7 @@ public class LLRealtimeSegmentDataManager extends RealtimeSegmentDataManager {
     _instanceId = _realtimeTableDataManager.getServerInstance();
     _leaseExtender = SegmentBuildTimeLeaseExtender.getLeaseExtender(_instanceId);
     _protocolHandler = new ServerSegmentCompletionProtocolHandler(_instanceId);
+    _consumer = _consumerFactory.buldConsumer();
 
     // TODO Validate configs
     IndexingConfig indexingConfig = _tableConfig.getIndexingConfig();
