@@ -1,17 +1,16 @@
-package com.linkedin.thirdeye.taskexecution.impl.dag;
+package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
-import com.linkedin.thirdeye.taskexecution.dag.AbstractLogicalDAG;
+import com.linkedin.thirdeye.taskexecution.dag.physical.AbstractPhysicalDAG;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
 
-public class LogicalPlan extends AbstractLogicalDAG<LogicalNode> {
-  private Map<NodeIdentifier, LogicalNode> rootNodes = new HashMap<>();
-  private Map<NodeIdentifier, LogicalNode> leafNodes = new HashMap<>();
-  private Map<NodeIdentifier, LogicalNode> nodes = new HashMap<>();
+public class PhysicalPlan extends AbstractPhysicalDAG<PhysicalNode> {
+  private Map<NodeIdentifier, PhysicalNode> rootNodes = new HashMap<>();
+  private Map<NodeIdentifier, PhysicalNode> leafNodes = new HashMap<>();
+  private Map<NodeIdentifier, PhysicalNode> nodes = new HashMap<>();
 
   /**
    * Add the given node if it has not been inserted to this DAG and returns the node that has the same {@link
@@ -22,7 +21,7 @@ public class LogicalPlan extends AbstractLogicalDAG<LogicalNode> {
    * @return the node that is just being added or the existing node that has the same {@link NodeIdentifier}.
    */
   @Override
-  public LogicalNode addNode(LogicalNode node) {
+  public PhysicalNode addNode(PhysicalNode node) {
     if (node.getIdentifier() == null) {
       throw new IllegalArgumentException("Unable to add a node with null node identifier.");
     }
@@ -37,7 +36,7 @@ public class LogicalPlan extends AbstractLogicalDAG<LogicalNode> {
    * @param sink   the sink edge of the edge.
    */
   @Override
-  public void addEdge(LogicalNode source, LogicalNode sink) {
+  public void addEdge(PhysicalNode source, PhysicalNode sink) {
     source = getOrAdd(source);
     sink = getOrAdd(sink);
 
@@ -54,7 +53,7 @@ public class LogicalPlan extends AbstractLogicalDAG<LogicalNode> {
   }
 
   @Override
-  public LogicalNode getNode(NodeIdentifier nodeIdentifier) {
+  public PhysicalNode getNode(NodeIdentifier nodeIdentifier) {
     return nodes.get(nodeIdentifier);
   }
 
@@ -66,7 +65,7 @@ public class LogicalPlan extends AbstractLogicalDAG<LogicalNode> {
    *
    * @return the node with the same {@link NodeIdentifier}.
    */
-  private LogicalNode getOrAdd(LogicalNode node) {
+  private PhysicalNode getOrAdd(PhysicalNode node) {
     NodeIdentifier nodeIdentifier = node.getIdentifier();
     if (!nodes.containsKey(nodeIdentifier)) {
       nodes.put(nodeIdentifier, node);
@@ -84,17 +83,17 @@ public class LogicalPlan extends AbstractLogicalDAG<LogicalNode> {
   }
 
   @Override
-  public Collection<LogicalNode> getRootNodes() {
+  public Collection<PhysicalNode> getRootNodes() {
     return new HashSet<>(rootNodes.values());
   }
 
   @Override
-  public Collection<LogicalNode> getLeafNodes() {
+  public Collection<PhysicalNode> getLeafNodes() {
     return new HashSet<>(leafNodes.values());
   }
 
   @Override
-  public Collection<LogicalNode> getAllNodes() {
+  public Collection<PhysicalNode> getAllNodes() {
     return new HashSet<>(nodes.values());
   }
 }

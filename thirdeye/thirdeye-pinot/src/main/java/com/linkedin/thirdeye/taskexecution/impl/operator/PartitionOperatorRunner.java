@@ -1,16 +1,16 @@
 package com.linkedin.thirdeye.taskexecution.impl.operator;
 
-import com.linkedin.thirdeye.taskexecution.dag.FrameworkNode;
+import com.linkedin.thirdeye.taskexecution.dag.physical.FrameworkNode;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResult;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResults;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
-import com.linkedin.thirdeye.taskexecution.impl.dag.ExecutionStatus;
+import com.linkedin.thirdeye.taskexecution.impl.physicaldag.ExecutionStatus;
 import com.linkedin.thirdeye.taskexecution.impl.dataflow.InMemoryExecutionResultsReader;
-import com.linkedin.thirdeye.taskexecution.impl.dag.NodeConfig;
-import com.linkedin.thirdeye.taskexecution.processor.Processor;
-import com.linkedin.thirdeye.taskexecution.processor.ProcessorConfig;
-import com.linkedin.thirdeye.taskexecution.processor.ProcessorContext;
+import com.linkedin.thirdeye.taskexecution.impl.physicaldag.NodeConfig;
+import com.linkedin.thirdeye.taskexecution.operator.Operator;
+import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
+import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -18,15 +18,15 @@ import java.util.Map;
 import java.util.Set;
 
 
-public class ParallelProcessorRunner<K, V> extends AbstractProcessorRunner {
+public class PartitionOperatorRunner<K, V> extends AbstractOperatorRunner {
 
   private ExecutionResults<K, V> executionResults;
 
-  public ParallelProcessorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass) {
+  public PartitionOperatorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass) {
     this(nodeIdentifier, nodeConfig, operatorClass, null);
   }
 
-  public ParallelProcessorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass,
+  public PartitionOperatorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass,
       FrameworkNode logicalNode) {
     super(nodeIdentifier, nodeConfig, operatorClass, logicalNode);
     this.executionResults = new ExecutionResults<>(nodeIdentifier);
@@ -41,7 +41,7 @@ public class ParallelProcessorRunner<K, V> extends AbstractProcessorRunner {
    * Invokes the execution of the operator that is define for the corresponding node in the DAG and returns its node
    * identifier.
    *
-   * @return the node identifier of this node (i.e., ProcessorRunner).
+   * @return the node identifier of this node (i.e., OperatorRunner).
    */
   @Override
   public NodeIdentifier call() {
@@ -52,15 +52,15 @@ public class ParallelProcessorRunner<K, V> extends AbstractProcessorRunner {
         throw new IllegalArgumentException("Node identifier cannot be null");
       }
       int numRetry = nodeConfig.numRetryAtError();
-      List<ProcessorContext> processorContexts = buildInputOperatorContext(nodeIdentifier, incomingResultsReaderMap);
+      List<OperatorContext> operatorContexts = buildInputOperatorContext(nodeIdentifier, incomingResultsReaderMap);
       // TODO: Submit each context to an individual thread
-      for (ProcessorContext processorContext : processorContexts) {
+      for (OperatorContext operatorContext : operatorContexts) {
         for (int i = 0; i <= numRetry; ++i) {
           try {
-            ProcessorConfig processorConfig = convertNodeConfigToOperatorConfig(nodeConfig);
-            Processor processor = initializeOperator(operatorClass, processorConfig);
-            ExecutionResult<K, V> operatorResult = processor.run(processorContext);
-            // Assume that each processor generates a result with non-duplicated key
+            OperatorConfig operatorConfig = convertNodeConfigToOperatorConfig(nodeConfig);
+            Operator operator = initializeOperator(operatorClass, operatorConfig);
+            ExecutionResult<K, V> operatorResult = operator.run(operatorContext);
+            // Assume that each operator generates a result with non-duplicated key
             executionResults.addResult(operatorResult);
           } catch (Exception e) {
             if (i == numRetry) {
@@ -78,7 +78,7 @@ public class ParallelProcessorRunner<K, V> extends AbstractProcessorRunner {
     return identifier;
   }
 
-  static List<ProcessorContext> buildInputOperatorContext(NodeIdentifier nodeIdentifier,
+  static List<OperatorContext> buildInputOperatorContext(NodeIdentifier nodeIdentifier,
       Map<NodeIdentifier, ExecutionResultsReader> incomingResultsReader) {
     // Experimental code for considering multi-threading
     Set keys = new HashSet();
@@ -88,10 +88,10 @@ public class ParallelProcessorRunner<K, V> extends AbstractProcessorRunner {
       }
     }
 
-    List<ProcessorContext> processorContexts = new ArrayList<>();
+    List<OperatorContext> operatorContexts = new ArrayList<>();
     for (Object key : keys) {
-      ProcessorContext processorContext = new ProcessorContext();
-      processorContext.setNodeIdentifier(nodeIdentifier);
+      OperatorContext operatorContext = new OperatorContext();
+      operatorContext.setNodeIdentifier(nodeIdentifier);
       for (NodeIdentifier pNodeIdentifier : incomingResultsReader.keySet()) {
         ExecutionResultsReader reader = incomingResultsReader.get(pNodeIdentifier);
         ExecutionResult executionResult = reader.get(key);
@@ -99,16 +99,16 @@ public class ParallelProcessorRunner<K, V> extends AbstractProcessorRunner {
         if (executionResult != null) {
           executionResults.addResult(executionResult);
         }
-        processorContext.addResults(pNodeIdentifier, executionResults);
+        operatorContext.addResults(pNodeIdentifier, executionResults);
       }
-      processorContexts.add(processorContext);
+      operatorContexts.add(operatorContext);
     }
 
     // TODO: Refine the design to decide if empty input still generate one context in order to trigger the operator
-    if (processorContexts.isEmpty()) {
-      processorContexts.add(new ProcessorContext(nodeIdentifier));
+    if (operatorContexts.isEmpty()) {
+      operatorContexts.add(new OperatorContext(nodeIdentifier));
     }
 
-    return processorContexts;
+    return operatorContexts;
   }
 }

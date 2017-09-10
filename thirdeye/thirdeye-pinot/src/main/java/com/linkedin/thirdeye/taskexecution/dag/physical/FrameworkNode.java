@@ -1,8 +1,10 @@
-package com.linkedin.thirdeye.taskexecution.dag;
+package com.linkedin.thirdeye.taskexecution.dag.physical;
 
+import com.linkedin.thirdeye.taskexecution.dag.Node;
+import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
-import com.linkedin.thirdeye.taskexecution.impl.dag.ExecutionStatus;
-import com.linkedin.thirdeye.taskexecution.impl.dag.NodeConfig;
+import com.linkedin.thirdeye.taskexecution.impl.physicaldag.ExecutionStatus;
+import com.linkedin.thirdeye.taskexecution.impl.physicaldag.NodeConfig;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -27,9 +29,9 @@ import java.util.concurrent.Callable;
  *                                       v
  *                               OperatorExecutor (runs operator)
  *
- * {@link com.linkedin.thirdeye.taskexecution.impl.dag.DAGExecutor} should remain agnostic to the vertical topology,
+ * {@link com.linkedin.thirdeye.taskexecution.impl.physicaldag.DAGExecutor} should remain agnostic to the vertical topology,
  * which is taken care of by FrameworkNode. On the other hand, FrameworkNode does not have the whole picture of
- * the workflow (DAG), it only knows the incoming node for preparing the input of its Processor.
+ * the workflow (DAG), it only knows the incoming node for preparing the input of its Operator.
  */
 public abstract class FrameworkNode<K, V> implements Callable<NodeIdentifier> {
   protected NodeIdentifier nodeIdentifier = new NodeIdentifier();

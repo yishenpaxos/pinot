@@ -1,6 +1,6 @@
-package com.linkedin.thirdeye.taskexecution.impl.dag;
+package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
-import com.linkedin.thirdeye.taskexecution.dag.AbstractLogicalNode;
+import com.linkedin.thirdeye.taskexecution.dag.physical.AbstractPhysicalNode;
 import com.linkedin.thirdeye.taskexecution.dag.DAG;
 import com.linkedin.thirdeye.taskexecution.dag.Node;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
@@ -18,9 +18,9 @@ import org.slf4j.LoggerFactory;
 /**
  * An single machine executor that goes through the DAG and submit the nodes, whose parents are finished, to execution
  * service. An executor takes care of only logical execution (control flow). The physical execution is done by
- * ProcessorRunner, which could be executed on other machines.
+ * OperatorRunner, which could be executed on other machines.
  */
-public class DAGExecutor<T extends AbstractLogicalNode> {
+public class DAGExecutor<T extends AbstractPhysicalNode> {
   private static final Logger LOG = LoggerFactory.getLogger(DAGExecutor.class);
   private ExecutorCompletionService<NodeIdentifier> executorCompletionService;
 
@@ -58,7 +58,7 @@ public class DAGExecutor<T extends AbstractLogicalNode> {
           processNode((T) outGoingNode, dagConfig);
         }
       } catch (InterruptedException | ExecutionException e) {
-        // The implementation of ProcessorRunner needs to guarantee that this block never happens
+        // The implementation of OperatorRunner needs to guarantee that this block never happens
         LOG.error("Aborting execution because unexpected error.", e);
         abortExecution();
         break;

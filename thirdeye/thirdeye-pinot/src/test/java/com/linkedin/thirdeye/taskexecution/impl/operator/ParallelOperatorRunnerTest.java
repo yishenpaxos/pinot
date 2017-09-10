@@ -4,12 +4,12 @@ import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResult;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResults;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
-import com.linkedin.thirdeye.taskexecution.impl.dag.ExecutionStatus;
+import com.linkedin.thirdeye.taskexecution.impl.physicaldag.ExecutionStatus;
 import com.linkedin.thirdeye.taskexecution.impl.dataflow.InMemoryExecutionResultsReader;
-import com.linkedin.thirdeye.taskexecution.impl.dag.NodeConfig;
-import com.linkedin.thirdeye.taskexecution.processor.Processor;
-import com.linkedin.thirdeye.taskexecution.processor.ProcessorConfig;
-import com.linkedin.thirdeye.taskexecution.processor.ProcessorContext;
+import com.linkedin.thirdeye.taskexecution.impl.physicaldag.NodeConfig;
+import com.linkedin.thirdeye.taskexecution.operator.Operator;
+import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
+import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -19,12 +19,12 @@ import org.apache.commons.collections.CollectionUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-public class ParallelProcessorRunnerTest {
+public class ParallelOperatorRunnerTest {
 
   @Test
   public void testCreation() {
     try {
-      new ParallelProcessorRunner(new NodeIdentifier(), new NodeConfig(), ProcessorRunnerTest.DummyProcessor.class);
+      new PartitionOperatorRunner(new NodeIdentifier(), new NodeConfig(), OperatorRunnerTest.DummyOperator.class);
     } catch (Exception e) {
       Assert.fail();
     }
@@ -60,14 +60,14 @@ public class ParallelProcessorRunnerTest {
       incomingResultsReader.put(node3Identifier, reader3);
     }
 
-    List<ProcessorContext> processorContextList = ParallelProcessorRunner
+    List<OperatorContext> operatorContextList = PartitionOperatorRunner
         .buildInputOperatorContext(new NodeIdentifier("OperatorContextBuilder"), incomingResultsReader);
 
-    Assert.assertTrue(CollectionUtils.isNotEmpty(processorContextList));
-    Assert.assertEquals(processorContextList.size(), 3);
+    Assert.assertTrue(CollectionUtils.isNotEmpty(operatorContextList));
+    Assert.assertEquals(operatorContextList.size(), 3);
 
-    for (ProcessorContext processorContext : processorContextList) {
-      Map<NodeIdentifier, ExecutionResults> inputs = processorContext.getInputs();
+    for (OperatorContext operatorContext : operatorContextList) {
+      Map<NodeIdentifier, ExecutionResults> inputs = operatorContext.getInputs();
       Set<String> keySet = new HashSet<>();
       for (Map.Entry<NodeIdentifier, ExecutionResults> nodeExecutionResultsEntry : inputs.entrySet()) {
         ExecutionResults<String, Integer> executionResults = nodeExecutionResultsEntry.getValue();
@@ -111,8 +111,8 @@ public class ParallelProcessorRunnerTest {
     executionResults.addResult(executionResult);
     ExecutionResultsReader reader = new InMemoryExecutionResultsReader<>(executionResults);
 
-    ParallelProcessorRunner runner =
-        new ParallelProcessorRunner(new NodeIdentifier(), nodeConfig, DummyProcessor.class);
+    PartitionOperatorRunner runner =
+        new PartitionOperatorRunner(new NodeIdentifier(), nodeConfig, DummyOperator.class);
     runner.addIncomingExecutionResultReader(new NodeIdentifier("DummyNode"), reader);
     runner.call();
     Assert.assertEquals(runner.getExecutionStatus(), ExecutionStatus.SUCCESS);
@@ -139,8 +139,8 @@ public class ParallelProcessorRunnerTest {
     n2ExecutionResults.addResult(n2ExecutionResult);
     ExecutionResultsReader node2Reader = new InMemoryExecutionResultsReader<>(n2ExecutionResults);
 
-    ParallelProcessorRunner runner =
-        new ParallelProcessorRunner(new NodeIdentifier(), nodeConfig, DummyProcessor.class);
+    PartitionOperatorRunner runner =
+        new PartitionOperatorRunner(new NodeIdentifier(), nodeConfig, DummyOperator.class);
     runner.addIncomingExecutionResultReader(new NodeIdentifier("DummyParent1"), node1Reader);
     runner.addIncomingExecutionResultReader(new NodeIdentifier("DummyParent2"), node2Reader);
     runner.call();
@@ -168,14 +168,14 @@ public class ParallelProcessorRunnerTest {
     Assert.assertEquals(recordCounter, 2);
   }
 
-  public static class DummyProcessor implements Processor {
+  public static class DummyOperator implements Operator {
     @Override
-    public void initialize(ProcessorConfig processorConfig) {
+    public void initialize(OperatorConfig operatorConfig) {
     }
 
     @Override
-    public ExecutionResult run(ProcessorContext processorContext) {
-      Map<NodeIdentifier, ExecutionResults> inputs = processorContext.getInputs();
+    public ExecutionResult run(OperatorContext operatorContext) {
+      Map<NodeIdentifier, ExecutionResults> inputs = operatorContext.getInputs();
       Set keySet = new HashSet();
       for (ExecutionResults executionResults : inputs.values()) {
         keySet.addAll(executionResults.keySet());

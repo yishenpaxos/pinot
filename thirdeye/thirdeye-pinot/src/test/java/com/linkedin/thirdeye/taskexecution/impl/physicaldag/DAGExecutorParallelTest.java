@@ -1,12 +1,12 @@
-package com.linkedin.thirdeye.taskexecution.impl.dag;
+package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
 import com.linkedin.thirdeye.taskexecution.dag.DAG;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResult;
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResults;
-import com.linkedin.thirdeye.taskexecution.processor.Processor;
-import com.linkedin.thirdeye.taskexecution.processor.ProcessorConfig;
-import com.linkedin.thirdeye.taskexecution.processor.ProcessorContext;
+import com.linkedin.thirdeye.taskexecution.operator.Operator;
+import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
+import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,14 +29,14 @@ public class DAGExecutorParallelTest {
    */
   @Test(enabled = false)
   public void testOneNodeChainExecution() {
-    DAG<LogicalNode> dag = new LogicalPlan();
-    LogicalNode root = new LogicalNode("root", LogGeneratorProcessor.class);
-    ParallelLogicNode loopNode = new ParallelLogicNode("2", LogProcessor.class);
+    DAG<PhysicalNode> dag = new PhysicalPlan();
+    PhysicalNode root = new PhysicalNode("root", LogGeneratorOperator.class);
+    PartitionedPhysicalNode loopNode = new PartitionedPhysicalNode("2", LogOperator.class);
     dag.addNode(root);
     dag.addNode(loopNode);
     dag.addEdge(root, loopNode);
 
-    DAGExecutor<LogicalNode> dagExecutor = new DAGExecutor<>(threadPool);
+    DAGExecutor<PhysicalNode> dagExecutor = new DAGExecutor<>(threadPool);
     dagExecutor.execute(dag, new DAGConfig());
 
     List<String> executionLog = DAGExecutorBasicTest.checkAndGetFinalResult(dagExecutor.getNode(loopNode.getIdentifier()));
@@ -49,23 +49,23 @@ public class DAGExecutorParallelTest {
   /**
    * An operator that appends node name to a list, which is passed in from its incoming nodes.
    */
-  public static class LogGeneratorProcessor implements Processor {
-    private static final Logger LOG = LoggerFactory.getLogger(LogGeneratorProcessor.class);
+  public static class LogGeneratorOperator implements Operator {
+    private static final Logger LOG = LoggerFactory.getLogger(LogGeneratorOperator.class);
 
     @Override
-    public void initialize(ProcessorConfig processorConfig) {
+    public void initialize(OperatorConfig operatorConfig) {
     }
 
     @Override
-    public ExecutionResult run(ProcessorContext processorContext) {
-      LOG.info("Running node: {}", processorContext.getNodeIdentifier().getName());
+    public ExecutionResult run(OperatorContext operatorContext) {
+      LOG.info("Running node: {}", operatorContext.getNodeIdentifier().getName());
       Map<String, List<String>> executionLogs = new HashMap<>();
       List<String> list1 = new ArrayList<>();
-      list1.add(processorContext.getNodeIdentifier().getName());
+      list1.add(operatorContext.getNodeIdentifier().getName());
       executionLogs.put(EXECUTION_LOG_KEY1, list1);
 
       List<String> list2 = new ArrayList<>();
-      list2.add(processorContext.getNodeIdentifier().getName());
+      list2.add(operatorContext.getNodeIdentifier().getName());
       executionLogs.put(EXECUTION_LOG_KEY2, list2);
 
       ExecutionResult operatorResult = new ExecutionResult();
@@ -78,17 +78,17 @@ public class DAGExecutorParallelTest {
   /**
    * An operator that appends node name to a list, which is passed in from its incoming nodes.
    */
-  public static class LogProcessor implements Processor {
-    private static final Logger LOG = LoggerFactory.getLogger(LogProcessor.class);
+  public static class LogOperator implements Operator {
+    private static final Logger LOG = LoggerFactory.getLogger(LogOperator.class);
 
     @Override
-    public void initialize(ProcessorConfig processorConfig) {
+    public void initialize(OperatorConfig operatorConfig) {
     }
 
     @Override
-    public ExecutionResult run(ProcessorContext processorContext) {
-      LOG.info("Running node: {}", processorContext.getNodeIdentifier().getName());
-      Map<NodeIdentifier, ExecutionResults> inputs = processorContext.getInputs();
+    public ExecutionResult run(OperatorContext operatorContext) {
+      LOG.info("Running node: {}", operatorContext.getNodeIdentifier().getName());
+      Map<NodeIdentifier, ExecutionResults> inputs = operatorContext.getInputs();
       List<String> executionLog = new ArrayList<>();
       String uniqueKey = "";
       for (ExecutionResults parentResult : inputs.values()) {
@@ -104,7 +104,7 @@ public class DAGExecutorParallelTest {
         }
         uniqueKey = key;
       }
-      executionLog.add(processorContext.getNodeIdentifier().getName());
+      executionLog.add(operatorContext.getNodeIdentifier().getName());
       ExecutionResult operatorResult = new ExecutionResult();
       operatorResult.setResult(uniqueKey, executionLog);
       return operatorResult;

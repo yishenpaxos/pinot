@@ -1,8 +1,10 @@
-package com.linkedin.thirdeye.taskexecution.dag;
+package com.linkedin.thirdeye.taskexecution.dag.physical;
 
+import com.linkedin.thirdeye.taskexecution.dag.DAG;
+import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import java.util.Collection;
 
-public abstract class AbstractLogicalDAG<T extends AbstractLogicalNode> implements DAG<T> {
+public abstract class AbstractPhysicalDAG<T extends AbstractPhysicalNode> implements DAG<T> {
 
   public abstract T addNode(T node);
 

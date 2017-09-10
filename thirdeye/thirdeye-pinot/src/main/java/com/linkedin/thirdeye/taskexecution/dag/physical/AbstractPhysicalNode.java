@@ -1,18 +1,20 @@
-package com.linkedin.thirdeye.taskexecution.dag;
+package com.linkedin.thirdeye.taskexecution.dag.physical;
 
+import com.linkedin.thirdeye.taskexecution.dag.Node;
+import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-public abstract class AbstractLogicalNode<T extends AbstractLogicalNode> extends FrameworkNode implements Node<T> {
+public abstract class AbstractPhysicalNode<T extends AbstractPhysicalNode> extends FrameworkNode implements Node<T> {
 
   private Set<T> incomingEdge = new HashSet<>();
   private Set<T> outgoingEdge = new HashSet<>();
 
-  protected AbstractLogicalNode() {
+  protected AbstractPhysicalNode() {
   }
 
-  protected AbstractLogicalNode(NodeIdentifier nodeIdentifier, Class operatorClass) {
+  protected AbstractPhysicalNode(NodeIdentifier nodeIdentifier, Class operatorClass) {
     super(nodeIdentifier, operatorClass);
   }
 

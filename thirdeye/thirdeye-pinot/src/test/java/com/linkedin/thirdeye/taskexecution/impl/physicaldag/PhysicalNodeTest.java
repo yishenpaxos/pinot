@@ -1,14 +1,14 @@
-package com.linkedin.thirdeye.taskexecution.impl.dag;
+package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
 import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-public class LogicalNodeTest {
-  private LogicalNode node;
+public class PhysicalNodeTest {
+  private PhysicalNode node;
   @Test
   public void testCreation() throws Exception {
-    node = new LogicalNode("Test", null);
+    node = new PhysicalNode("Test", null);
   }
 
   @Test (dependsOnMethods = "testCreation")
