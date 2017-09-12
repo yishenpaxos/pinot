@@ -1,10 +1,8 @@
 package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
-import com.linkedin.thirdeye.taskexecution.dag.physical.AbstractPhysicalNode;
-import com.linkedin.thirdeye.taskexecution.dag.physical.FrameworkNode;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
-import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
-import com.linkedin.thirdeye.taskexecution.impl.dataflow.InMemoryExecutionResultsReader;
+import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
+import com.linkedin.thirdeye.taskexecution.impl.dataflow.InMemorySimpleReader;
 import com.linkedin.thirdeye.taskexecution.impl.operator.OperatorRunner;
 import java.util.Collection;
 import java.util.HashSet;
@@ -15,7 +13,7 @@ import org.apache.commons.collections.CollectionUtils;
 /**
  * A PhysicalNode that executes work using one partition.
  */
-public class PhysicalNode<K, V> extends AbstractPhysicalNode<PhysicalNode> {
+public class PhysicalNode extends AbstractPhysicalNode<PhysicalNode> {
 
   private Set<FrameworkNode> physicalNodes = new HashSet<>();
 
@@ -38,16 +36,16 @@ public class PhysicalNode<K, V> extends AbstractPhysicalNode<PhysicalNode> {
   }
 
   @Override
-  public ExecutionResultsReader<K, V> getExecutionResultsReader() {
+  public Reader getOutputReader() {
     if (CollectionUtils.isNotEmpty(physicalNodes)) {
       if (physicalNodes.size() == 1) {
         FrameworkNode physicalNode = (FrameworkNode) CollectionUtils.get(physicalNodes, 0);
-        return physicalNode.getExecutionResultsReader();
+        return physicalNode.getOutputReader();
       } else {
         throw new IllegalArgumentException("Multiple partitions are not supported yet.");
       }
     }
-    return new InMemoryExecutionResultsReader<>();
+    return new InMemorySimpleReader<>();
   }
 
   @Override
@@ -56,7 +54,10 @@ public class PhysicalNode<K, V> extends AbstractPhysicalNode<PhysicalNode> {
     physicalNodes.add(runner);
 
     for (FrameworkNode pNode : this.getIncomingNodes()) {
-      runner.addIncomingExecutionResultReader(pNode.getIdentifier(), pNode.getExecutionResultsReader());
+      // TODO: Get output (writer) from parents and construct inputs (readers)
+
+      // TODO: Add node identifier to port identifier mapping
+      runner.addInput(pNode.getIdentifier(), pNode.getOutputReader());
     }
 
     return runner.call();

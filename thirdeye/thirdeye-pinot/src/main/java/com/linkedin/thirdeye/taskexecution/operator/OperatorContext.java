@@ -1,43 +1,37 @@
 package com.linkedin.thirdeye.taskexecution.operator;
 
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
-import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionContext;
-import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResults;
+import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
 import java.util.HashMap;
 import java.util.Map;
 
-public class OperatorContext implements ExecutionContext<ExecutionResults> {
+public class OperatorContext {
   private NodeIdentifier nodeIdentifier;
-  private Map<NodeIdentifier, ExecutionResults> inputs = new HashMap<>();
+  private Map<NodeIdentifier, Reader> inputs = new HashMap<>();
 
   public OperatorContext() {
   }
 
   public OperatorContext(NodeIdentifier nodeIdentifier) {
-    this.nodeIdentifier = nodeIdentifier;
+    setNodeIdentifier(nodeIdentifier);
   }
 
-  @Override
   public NodeIdentifier getNodeIdentifier() {
     return nodeIdentifier;
   }
 
-  @Override
   public void setNodeIdentifier(NodeIdentifier nodeIdentifier) {
     this.nodeIdentifier = nodeIdentifier;
   }
 
-  @Override
-  public Map<NodeIdentifier, ExecutionResults> getInputs() {
+  public Map<NodeIdentifier, Reader> getInputs() {
     return inputs;
   }
 
-  @Override
-  public void addResults(NodeIdentifier identifier, ExecutionResults operatorResult) {
-    inputs.put(identifier, operatorResult);
+  public void addReader(NodeIdentifier identifier, Reader inputReader) {
+    inputs.put(identifier, inputReader);
   }
 
-  @Override
   public int size() {
     return inputs.size();
   }

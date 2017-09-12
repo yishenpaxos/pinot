@@ -1,12 +1,12 @@
 package com.linkedin.thirdeye.taskexecution.impl.operator;
 
-import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResult;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
-import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResults;
-import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
+import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
+import com.linkedin.thirdeye.taskexecution.dataflow.reader.SimpleReader;
+import com.linkedin.thirdeye.taskexecution.impl.dataflow.InMemorySimpleReader;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.ExecutionStatus;
-import com.linkedin.thirdeye.taskexecution.impl.dataflow.InMemoryExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.NodeConfig;
+import com.linkedin.thirdeye.taskexecution.operator.ExecutionResult;
 import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
@@ -30,7 +30,7 @@ public class OperatorRunnerTest {
 
   @Test
   public void testBuildInputOperatorContext() {
-    Map<NodeIdentifier, ExecutionResultsReader> incomingResultsReader = new HashMap<>();
+    Map<NodeIdentifier, SimpleReader> incomingReaders = new HashMap<>();
     NodeIdentifier node1Identifier = new NodeIdentifier("node1");
     NodeIdentifier node2Identifier = new NodeIdentifier("node2");
     NodeIdentifier node3Identifier = new NodeIdentifier("node3");
@@ -38,50 +38,52 @@ public class OperatorRunnerTest {
     String key12 = "result12";
     String key21 = "result21";
     String key22 = "result22";
-    {
-      ExecutionResults<String, Integer> executionResults1 = new ExecutionResults<>(node1Identifier);
-      executionResults1.addResult(new ExecutionResult<>(key11, 11));
-      executionResults1.addResult(new ExecutionResult<>(key12, 12));
-      ExecutionResultsReader<String, Integer> reader1 = new InMemoryExecutionResultsReader<>(executionResults1);
-      incomingResultsReader.put(node1Identifier, reader1);
-    }
-    {
-      ExecutionResults<String, Integer> executionResults2 = new ExecutionResults<>(node2Identifier);
-      executionResults2.addResult(new ExecutionResult<>(key21, 21));
-      executionResults2.addResult(new ExecutionResult<>(key22, 22));
-      ExecutionResultsReader<String, Integer> reader2 = new InMemoryExecutionResultsReader<>(executionResults2);
-      incomingResultsReader.put(node2Identifier, reader2);
-    }
-    {
-      ExecutionResults<String, Integer> executionResults3 = new ExecutionResults<>(node3Identifier);
-      ExecutionResultsReader<String, Integer> reader3 = new InMemoryExecutionResultsReader<>(executionResults3);
-      incomingResultsReader.put(node3Identifier, reader3);
-    }
+
+    Map<String, Integer> expectedContext1 = new HashMap<>();
+    expectedContext1.put(key11, 11);
+    expectedContext1.put(key12, 12);
+    SimpleReader<Map<String, Integer>> reader1 = new InMemorySimpleReader<>(expectedContext1);
+    incomingReaders.put(node1Identifier, reader1);
+
+    Map<String, Integer> expectedContext2 = new HashMap<>();
+    expectedContext2.put(key21, 21);
+    expectedContext2.put(key22, 22);
+    SimpleReader<Map<String, Integer>> reader2 = new InMemorySimpleReader<>(expectedContext2);
+    incomingReaders.put(node2Identifier, reader2);
+
+    Map<String, Integer> expectedContext3 = new HashMap<>();
+    SimpleReader<Map<String, Integer>> reader3 = new InMemorySimpleReader<>(expectedContext3);
+    incomingReaders.put(node3Identifier, reader3);
 
     final boolean allowEmptyInput = false;
     OperatorContext operatorContext = OperatorRunner
-        .buildInputOperatorContext(new NodeIdentifier("OperatorContextBuilder"), incomingResultsReader,
+        .buildInputOperatorContext(new NodeIdentifier("OperatorContextBuilder"), incomingReaders,
             allowEmptyInput);
     Assert.assertNotNull(operatorContext);
 
     Assert.assertEquals(operatorContext.getNodeIdentifier(), new NodeIdentifier("OperatorContextBuilder"));
-    Map<NodeIdentifier, ExecutionResults> inputs = operatorContext.getInputs();
+    Map<NodeIdentifier, Reader> inputs = operatorContext.getInputs();
     Assert.assertTrue(MapUtils.isNotEmpty(inputs));
-    ExecutionResults<String, Integer> executionResults1 = inputs.get(node1Identifier);
-    Assert.assertEquals(executionResults1.keySet().size(), 2);
-    Assert.assertEquals(executionResults1.getResult(key11).result(), Integer.valueOf(11));
-    Assert.assertEquals(executionResults1.getResult(key12).result(), Integer.valueOf(12));
-    ExecutionResults<String, Integer> executionResults2 = inputs.get(node2Identifier);
-    Assert.assertEquals(executionResults2.keySet().size(), 2);
-    Assert.assertEquals(executionResults2.getResult(key21).result(), Integer.valueOf(21));
-    Assert.assertEquals(executionResults2.getResult(key22).result(), Integer.valueOf(22));
-    ExecutionResults<String, Integer> executionResults3 = inputs.get(node3Identifier);
-    Assert.assertNull(executionResults3);
+
+    Map<String, Integer> actualContext1 = (Map<String, Integer>) ((SimpleReader) inputs.get(node1Identifier)).read();
+    Assert.assertEquals(actualContext1.size(), 2);
+    for (Map.Entry<String, Integer> entry : actualContext1.entrySet()) {
+      Assert.assertEquals(entry.getValue(), expectedContext1.get(entry.getKey()));
+    }
+
+    Map<String, Integer> actualContext2 = (Map<String, Integer>) ((SimpleReader) inputs.get(node2Identifier)).read();
+    Assert.assertEquals(actualContext2.size(), 2);
+    for (Map.Entry<String, Integer> entry : actualContext2.entrySet()) {
+      Assert.assertEquals(entry.getValue(), expectedContext2.get(entry.getKey()));
+    }
+
+    Map<String, Integer> actualContext3 = (Map<String, Integer>) ((SimpleReader) inputs.get(node3Identifier)).read();
+    Assert.assertEquals(actualContext3.size(), 0);
   }
 
   @Test
   public void testBuildEmptyInputOperatorContext() {
-    Map<NodeIdentifier, ExecutionResultsReader> incomingResultsReader = new HashMap<>();
+    Map<NodeIdentifier, SimpleReader> incomingResultsReader = new HashMap<>();
 
     boolean allowEmptyInput = false;
     OperatorContext operatorContextNull = OperatorRunner
@@ -102,20 +104,12 @@ public class OperatorRunnerTest {
     nodeConfig.setSkipAtFailure(false);
     nodeConfig.setNumRetryAtError(0);
 
-    ExecutionResults<String, Integer> executionResults = new ExecutionResults<>(new NodeIdentifier("DummyParent"));
-    ExecutionResult<String, Integer> executionResult = new ExecutionResult<>("TestDummy", 123);
-    executionResults.addResult(executionResult);
-    ExecutionResultsReader reader = new InMemoryExecutionResultsReader<>(executionResults);
-
     OperatorRunner runner = new OperatorRunner(new NodeIdentifier(), nodeConfig, DummyOperator.class);
-    runner.addIncomingExecutionResultReader(new NodeIdentifier("DummyNode"), reader);
     runner.call();
     Assert.assertEquals(runner.getExecutionStatus(), ExecutionStatus.SUCCESS);
 
-    ExecutionResultsReader executionResultsReader = runner.getExecutionResultsReader();
-    Assert.assertTrue(executionResultsReader.hasNext());
-
-    Assert.assertEquals(executionResultsReader.next().result(), 0);
+    SimpleReader<Integer> resultReader = (SimpleReader) runner.getOutputReader();
+    Assert.assertEquals(resultReader.read(), Integer.valueOf(0));
   }
 
   @Test
@@ -154,7 +148,7 @@ public class OperatorRunnerTest {
 
     @Override
     public ExecutionResult run(OperatorContext operatorContext) {
-      return new ExecutionResult<>("I am a Dummy", 0);
+      return new ExecutionResult<>(0);
     }
   }
 

@@ -1,7 +1,7 @@
 package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
 import com.linkedin.thirdeye.taskexecution.dag.DAG;
-import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResult;
+import com.linkedin.thirdeye.taskexecution.operator.ExecutionResult;
 import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;

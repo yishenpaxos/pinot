@@ -2,9 +2,9 @@ package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
 import com.linkedin.thirdeye.taskexecution.dag.DAG;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
-import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResult;
-import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResults;
-import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
+import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
+import com.linkedin.thirdeye.taskexecution.dataflow.reader.SimpleReader;
+import com.linkedin.thirdeye.taskexecution.operator.ExecutionResult;
 import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
@@ -26,7 +26,6 @@ import org.testng.annotations.Test;
 public class DAGExecutorBasicTest {
   private static final Logger LOG = LoggerFactory.getLogger(DAGExecutorBasicTest.class);
   private ExecutorService threadPool = Executors.newFixedThreadPool(10);
-  private static final String EXECUTION_LOG_KEY = "";
 
   /**
    * DAG: root
@@ -260,10 +259,11 @@ public class DAGExecutorBasicTest {
     @Override
     public ExecutionResult run(OperatorContext operatorContext) {
       LOG.info("Running node: {}", operatorContext.getNodeIdentifier().getName());
-      Map<NodeIdentifier, ExecutionResults> inputs = operatorContext.getInputs();
+      Map<NodeIdentifier, Reader> inputs = operatorContext.getInputs();
       List<String> executionLog = new ArrayList<>();
-      for (ExecutionResults parentResult : inputs.values()) {
-        Object result = parentResult.getResult(EXECUTION_LOG_KEY).result();
+      for (Reader r : inputs.values()) {
+        SimpleReader reader = (SimpleReader) r;
+        Object result = reader.read();
         if (result instanceof List) {
           List<String> list = (List<String>) result;
           for (String s : list) {
@@ -275,7 +275,7 @@ public class DAGExecutorBasicTest {
       }
       executionLog.add(operatorContext.getNodeIdentifier().getName());
       ExecutionResult operatorResult = new ExecutionResult();
-      operatorResult.setResult(EXECUTION_LOG_KEY, executionLog);
+      operatorResult.setResult(executionLog);
       return operatorResult;
     }
   }
@@ -302,17 +302,18 @@ public class DAGExecutorBasicTest {
    * @return the final execution log of the DAG.
    */
   static List<String> checkAndGetFinalResult(PhysicalNode node) {
-    ExecutionResultsReader executionResultsReader = node.getExecutionResultsReader();
-    Assert.assertNotNull(executionResultsReader);
-    Assert.assertTrue(executionResultsReader.hasNext());
-
-    ExecutionResult finalResult = executionResultsReader.next();
+    SimpleReader<List<String>> reader = (SimpleReader) node.getOutputReader();
+    Assert.assertNotNull(reader);
+//    Assert.assertTrue(reader.hasNext());
+//
+    List<String> finalResult = reader.read();
     Assert.assertNotNull(finalResult);
-    Assert.assertNotNull(finalResult.result());
+    return finalResult;
+//    Assert.assertNotNull(finalResult.result());
 
-    List<String> result = (List<String>) finalResult.result();
-    Assert.assertNotNull(result);
-    return result;
+//    List<String> result = (List<String>) finalResult.result();
+//    Assert.assertNotNull(result);
+//    return result;
   }
 
   /**

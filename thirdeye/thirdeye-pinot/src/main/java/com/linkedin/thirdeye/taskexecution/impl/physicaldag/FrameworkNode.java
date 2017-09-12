@@ -1,10 +1,8 @@
-package com.linkedin.thirdeye.taskexecution.dag.physical;
+package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
 import com.linkedin.thirdeye.taskexecution.dag.Node;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
-import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
-import com.linkedin.thirdeye.taskexecution.impl.physicaldag.ExecutionStatus;
-import com.linkedin.thirdeye.taskexecution.impl.physicaldag.NodeConfig;
+import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -33,7 +31,7 @@ import java.util.concurrent.Callable;
  * which is taken care of by FrameworkNode. On the other hand, FrameworkNode does not have the whole picture of
  * the workflow (DAG), it only knows the incoming node for preparing the input of its Operator.
  */
-public abstract class FrameworkNode<K, V> implements Callable<NodeIdentifier> {
+public abstract class FrameworkNode implements Callable<NodeIdentifier> {
   protected NodeIdentifier nodeIdentifier = new NodeIdentifier();
   protected Class operatorClass;
   protected NodeConfig nodeConfig = new NodeConfig();
@@ -76,13 +74,14 @@ public abstract class FrameworkNode<K, V> implements Callable<NodeIdentifier> {
     return nodeConfig;
   }
 
-  public abstract FrameworkNode<K, V> getLogicalNode();
+  public abstract FrameworkNode getLogicalNode();
 
-  public abstract Collection<FrameworkNode<K, V>> getPhysicalNode();
+  public abstract Collection<FrameworkNode> getPhysicalNode();
 
   public abstract ExecutionStatus getExecutionStatus();
 
-  public abstract ExecutionResultsReader<K, V> getExecutionResultsReader();
+  @Deprecated
+  public abstract Reader getOutputReader();
 
   /**
    * {@link NodeIdentifier} is always the unique identifier to a node and hence all the other fields of this class

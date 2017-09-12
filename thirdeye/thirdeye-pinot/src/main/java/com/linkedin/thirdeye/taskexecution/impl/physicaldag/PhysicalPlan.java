@@ -1,13 +1,13 @@
 package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
-import com.linkedin.thirdeye.taskexecution.dag.physical.AbstractPhysicalDAG;
+import com.linkedin.thirdeye.taskexecution.dag.DAG;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
-public class PhysicalPlan extends AbstractPhysicalDAG<PhysicalNode> {
+public class PhysicalPlan implements DAG<PhysicalNode> {
   private Map<NodeIdentifier, PhysicalNode> rootNodes = new HashMap<>();
   private Map<NodeIdentifier, PhysicalNode> leafNodes = new HashMap<>();
   private Map<NodeIdentifier, PhysicalNode> nodes = new HashMap<>();

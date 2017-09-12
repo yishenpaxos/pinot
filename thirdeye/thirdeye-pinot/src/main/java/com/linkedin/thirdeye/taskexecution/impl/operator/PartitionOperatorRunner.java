@@ -1,26 +1,24 @@
 package com.linkedin.thirdeye.taskexecution.impl.operator;
 
-import com.linkedin.thirdeye.taskexecution.dag.physical.FrameworkNode;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
-import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResult;
-import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResults;
-import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
+import com.linkedin.thirdeye.taskexecution.dataflow.reader.IterativeReader;
+import com.linkedin.thirdeye.taskexecution.dataflow.reader.KVReader;
+import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.ExecutionStatus;
-import com.linkedin.thirdeye.taskexecution.impl.dataflow.InMemoryExecutionResultsReader;
+import com.linkedin.thirdeye.taskexecution.impl.physicaldag.FrameworkNode;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.NodeConfig;
 import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-
+@Deprecated
 public class PartitionOperatorRunner<K, V> extends AbstractOperatorRunner {
-
-  private ExecutionResults<K, V> executionResults;
 
   public PartitionOperatorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass) {
     this(nodeIdentifier, nodeConfig, operatorClass, null);
@@ -29,12 +27,11 @@ public class PartitionOperatorRunner<K, V> extends AbstractOperatorRunner {
   public PartitionOperatorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass,
       FrameworkNode logicalNode) {
     super(nodeIdentifier, nodeConfig, operatorClass, logicalNode);
-    this.executionResults = new ExecutionResults<>(nodeIdentifier);
   }
 
   @Override
-  public ExecutionResultsReader getExecutionResultsReader() {
-    return new InMemoryExecutionResultsReader<>(executionResults);
+  public KVReader getOutputReader() {
+    return null;
   }
 
   /**
@@ -52,16 +49,18 @@ public class PartitionOperatorRunner<K, V> extends AbstractOperatorRunner {
         throw new IllegalArgumentException("Node identifier cannot be null");
       }
       int numRetry = nodeConfig.numRetryAtError();
-      List<OperatorContext> operatorContexts = buildInputOperatorContext(nodeIdentifier, incomingResultsReaderMap);
+      Map<NodeIdentifier, IterativeReader> incomingIterativeReaderMap = new HashMap<>();
+      for (Map.Entry<NodeIdentifier, Reader> nodeIdentifierReaderEntry : getIncomingReaderMap().entrySet()) {
+        incomingIterativeReaderMap.put(nodeIdentifierReaderEntry.getKey(),
+            (IterativeReader) nodeIdentifierReaderEntry.getValue());
+      }
+      List<OperatorContext> operatorContexts = buildInputOperatorContext(nodeIdentifier, incomingIterativeReaderMap);
       // TODO: Submit each context to an individual thread
       for (OperatorContext operatorContext : operatorContexts) {
         for (int i = 0; i <= numRetry; ++i) {
           try {
             OperatorConfig operatorConfig = convertNodeConfigToOperatorConfig(nodeConfig);
             Operator operator = initializeOperator(operatorClass, operatorConfig);
-            ExecutionResult<K, V> operatorResult = operator.run(operatorContext);
-            // Assume that each operator generates a result with non-duplicated key
-            executionResults.addResult(operatorResult);
           } catch (Exception e) {
             if (i == numRetry) {
               setFailure(e);
@@ -79,28 +78,28 @@ public class PartitionOperatorRunner<K, V> extends AbstractOperatorRunner {
   }
 
   static List<OperatorContext> buildInputOperatorContext(NodeIdentifier nodeIdentifier,
-      Map<NodeIdentifier, ExecutionResultsReader> incomingResultsReader) {
+      Map<NodeIdentifier, IterativeReader> incomingResultsReader) {
     // Experimental code for considering multi-threading
     Set keys = new HashSet();
-    for (ExecutionResultsReader resultsReader : incomingResultsReader.values()) {
-      while (resultsReader.hasNext()) {
-        keys.add(resultsReader.next().key());
-      }
-    }
+//    for (KVReader resultsReader : incomingResultsReader.values()) {
+//      while (resultsReader.hasNext()) {
+//        keys.add(resultsReader.next().key());
+//      }
+//    }
 
     List<OperatorContext> operatorContexts = new ArrayList<>();
     for (Object key : keys) {
       OperatorContext operatorContext = new OperatorContext();
       operatorContext.setNodeIdentifier(nodeIdentifier);
-      for (NodeIdentifier pNodeIdentifier : incomingResultsReader.keySet()) {
-        ExecutionResultsReader reader = incomingResultsReader.get(pNodeIdentifier);
-        ExecutionResult executionResult = reader.get(key);
-        ExecutionResults executionResults = new ExecutionResults(pNodeIdentifier);
-        if (executionResult != null) {
-          executionResults.addResult(executionResult);
-        }
-        operatorContext.addResults(pNodeIdentifier, executionResults);
-      }
+//      for (NodeIdentifier pNodeIdentifier : incomingResultsReader.keySet()) {
+//        KVReader reader = incomingResultsReader.get(pNodeIdentifier);
+//        ExecutionResult executionResult = reader.get(key);
+//        ExecutionResults executionResults = new ExecutionResults(pNodeIdentifier);
+//        if (executionResult != null) {
+//          executionResults.addResult(executionResult);
+//        }
+//        operatorContext.addReader(pNodeIdentifier, executionResults);
+//      }
       operatorContexts.add(operatorContext);
     }
 

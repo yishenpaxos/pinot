@@ -1,8 +1,8 @@
 package com.linkedin.thirdeye.taskexecution.impl.operator;
 
-import com.linkedin.thirdeye.taskexecution.dag.physical.FrameworkNode;
+import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
+import com.linkedin.thirdeye.taskexecution.impl.physicaldag.FrameworkNode;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
-import com.linkedin.thirdeye.taskexecution.dataflow.ExecutionResultsReader;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.ExecutionStatus;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.NodeConfig;
 import com.linkedin.thirdeye.taskexecution.operator.Operator;
@@ -18,7 +18,7 @@ public abstract class AbstractOperatorRunner extends FrameworkNode {
   private static final Logger LOG = LoggerFactory.getLogger(AbstractOperatorRunner.class);
 
   private FrameworkNode logicalNode;
-  protected Map<NodeIdentifier, ExecutionResultsReader> incomingResultsReaderMap = new HashMap<>();
+  private Map<NodeIdentifier, Reader> incomingReaderMap = new HashMap<>();
   protected ExecutionStatus executionStatus = ExecutionStatus.RUNNING;
 
   public AbstractOperatorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass,
@@ -27,13 +27,12 @@ public abstract class AbstractOperatorRunner extends FrameworkNode {
     this.logicalNode = logicalNode;
   }
 
-  public void addIncomingExecutionResultReader(NodeIdentifier nodeIdentifier,
-      ExecutionResultsReader executionResultsReader) {
-    incomingResultsReaderMap.put(nodeIdentifier, executionResultsReader);
+  public void addInput(NodeIdentifier nodeIdentifier, Reader reader) {
+    incomingReaderMap.put(nodeIdentifier, reader);
   }
 
-  public Map<NodeIdentifier, ExecutionResultsReader> getIncomingResultsReaderMap() {
-    return incomingResultsReaderMap;
+  public Map<NodeIdentifier, Reader> getIncomingReaderMap() {
+    return incomingReaderMap;
   }
 
   @Override
