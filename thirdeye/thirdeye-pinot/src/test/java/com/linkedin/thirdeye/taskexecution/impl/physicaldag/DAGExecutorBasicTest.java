@@ -262,10 +262,9 @@ public class DAGExecutorBasicTest {
       Map<NodeIdentifier, Reader> inputs = operatorContext.getInputs();
       List<String> executionLog = new ArrayList<>();
       for (Reader r : inputs.values()) {
-        SimpleReader reader = (SimpleReader) r;
-        Object result = reader.read();
-        if (result instanceof List) {
-          List<String> list = (List<String>) result;
+        SimpleReader<List<String>> reader = (SimpleReader) r;
+        List<String> list = reader.read();
+        if (list != null) {
           for (String s : list) {
             if (!executionLog.contains(s)) {
               executionLog.add(s);
@@ -304,16 +303,10 @@ public class DAGExecutorBasicTest {
   static List<String> checkAndGetFinalResult(PhysicalNode node) {
     SimpleReader<List<String>> reader = (SimpleReader) node.getOutputReader();
     Assert.assertNotNull(reader);
-//    Assert.assertTrue(reader.hasNext());
-//
+
     List<String> finalResult = reader.read();
     Assert.assertNotNull(finalResult);
     return finalResult;
-//    Assert.assertNotNull(finalResult.result());
-
-//    List<String> result = (List<String>) finalResult.result();
-//    Assert.assertNotNull(result);
-//    return result;
   }
 
   /**
