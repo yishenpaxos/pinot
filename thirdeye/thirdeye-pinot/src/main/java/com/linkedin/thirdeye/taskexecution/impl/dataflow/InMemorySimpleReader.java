@@ -1,8 +1,8 @@
 package com.linkedin.thirdeye.taskexecution.impl.dataflow;
 
-import com.linkedin.thirdeye.taskexecution.dataflow.reader.SimpleReader;
+import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
 
-public class InMemorySimpleReader<V> implements SimpleReader<V> {
+public class InMemorySimpleReader<V> implements Reader<V> {
   private V payload;
   private boolean isPayloadSet = false;
 

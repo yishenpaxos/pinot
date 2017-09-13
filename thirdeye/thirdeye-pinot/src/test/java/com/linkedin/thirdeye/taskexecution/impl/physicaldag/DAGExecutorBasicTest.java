@@ -3,7 +3,6 @@ package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 import com.linkedin.thirdeye.taskexecution.dag.DAG;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
-import com.linkedin.thirdeye.taskexecution.dataflow.reader.SimpleReader;
 import com.linkedin.thirdeye.taskexecution.operator.ExecutionResult;
 import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
@@ -261,8 +260,7 @@ public class DAGExecutorBasicTest {
       LOG.info("Running node: {}", operatorContext.getNodeIdentifier().getName());
       Map<NodeIdentifier, Reader> inputs = operatorContext.getInputs();
       List<String> executionLog = new ArrayList<>();
-      for (Reader r : inputs.values()) {
-        SimpleReader<List<String>> reader = (SimpleReader) r;
+      for (Reader<List<String>> reader : inputs.values()) {
         if (reader.hasPayload()) {
           List<String> list = reader.read();
             for (String s : list) {
@@ -301,7 +299,7 @@ public class DAGExecutorBasicTest {
    * @return the final execution log of the DAG.
    */
   static List<String> checkAndGetFinalResult(PhysicalNode node) {
-    SimpleReader<List<String>> reader = (SimpleReader) node.getOutputReader();
+    Reader<List<String>> reader = node.getOutputReader();
     Assert.assertNotNull(reader);
 
     List<String> finalResult = reader.read();

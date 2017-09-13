@@ -1,30 +1,29 @@
 package com.linkedin.thirdeye.taskexecution.impl.operator;
 
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
-import com.linkedin.thirdeye.taskexecution.impl.physicaldag.FrameworkNode;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.ExecutionStatus;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.NodeConfig;
 import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class AbstractOperatorRunner extends FrameworkNode {
+public abstract class AbstractOperatorRunner {
   private static final Logger LOG = LoggerFactory.getLogger(AbstractOperatorRunner.class);
 
-  private FrameworkNode logicalNode;
+  protected NodeIdentifier nodeIdentifier = new NodeIdentifier();
+  protected Class operatorClass;
+  protected NodeConfig nodeConfig = new NodeConfig();
   private Map<NodeIdentifier, Reader> incomingReaderMap = new HashMap<>();
   protected ExecutionStatus executionStatus = ExecutionStatus.RUNNING;
 
-  public AbstractOperatorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass,
-      FrameworkNode logicalNode) {
-    super(nodeIdentifier, nodeConfig, operatorClass);
-    this.logicalNode = logicalNode;
+  public AbstractOperatorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass) {
+    this.nodeIdentifier = nodeIdentifier;
+    this.nodeConfig = nodeConfig;
+    this.operatorClass = operatorClass;
   }
 
   public void addInput(NodeIdentifier nodeIdentifier, Reader reader) {
@@ -35,17 +34,6 @@ public abstract class AbstractOperatorRunner extends FrameworkNode {
     return incomingReaderMap;
   }
 
-  @Override
-  public FrameworkNode getLogicalNode() {
-    return logicalNode;
-  }
-
-  @Override
-  public Collection<FrameworkNode> getPhysicalNode() {
-    return Collections.emptyList();
-  }
-
-  @Override
   public ExecutionStatus getExecutionStatus() {
     return executionStatus;
   }

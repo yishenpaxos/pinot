@@ -2,11 +2,17 @@ package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
 import com.linkedin.thirdeye.taskexecution.dag.Node;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
+import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
-public abstract class AbstractPhysicalNode<T extends AbstractPhysicalNode> extends FrameworkNode implements Node<T> {
+public abstract class AbstractPhysicalNode<T extends AbstractPhysicalNode> implements Node<T>, Callable<NodeIdentifier> {
+  protected NodeIdentifier nodeIdentifier = new NodeIdentifier();
+  protected Class operatorClass;
+  protected NodeConfig nodeConfig = new NodeConfig();
 
   private Set<T> incomingEdge = new HashSet<>();
   private Set<T> outgoingEdge = new HashSet<>();
@@ -15,7 +21,24 @@ public abstract class AbstractPhysicalNode<T extends AbstractPhysicalNode> exten
   }
 
   protected AbstractPhysicalNode(NodeIdentifier nodeIdentifier, Class operatorClass) {
-    super(nodeIdentifier, operatorClass);
+    this.nodeIdentifier = nodeIdentifier;
+    this.operatorClass = operatorClass;
+  }
+
+  public NodeIdentifier getIdentifier() {
+    return nodeIdentifier;
+  }
+
+  public void setIdentifier(NodeIdentifier nodeIdentifier) {
+    this.nodeIdentifier = nodeIdentifier;
+  }
+
+  public NodeConfig getNodeConfig() {
+    return nodeConfig;
+  }
+
+  public void setNodeConfig(NodeConfig nodeConfig) {
+    this.nodeConfig = nodeConfig;
   }
 
   public void addIncomingNode(T node) {
@@ -32,5 +55,29 @@ public abstract class AbstractPhysicalNode<T extends AbstractPhysicalNode> exten
 
   public Collection<T> getOutgoingNodes() {
     return outgoingEdge;
+  }
+
+  public abstract ExecutionStatus getExecutionStatus();
+
+  @Deprecated
+  public abstract Reader getOutputReader();
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    AbstractPhysicalNode<?> that = (AbstractPhysicalNode<?>) o;
+    return Objects.equals(getIdentifier(), that.getIdentifier()) && Objects
+        .equals(operatorClass, that.operatorClass) && Objects.equals(getNodeConfig(), that.getNodeConfig()) && Objects
+        .equals(incomingEdge, that.incomingEdge) && Objects.equals(outgoingEdge, that.outgoingEdge);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getIdentifier(), operatorClass, getNodeConfig());
   }
 }

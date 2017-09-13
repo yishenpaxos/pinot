@@ -2,31 +2,22 @@ package com.linkedin.thirdeye.taskexecution.impl.operator;
 
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
-import com.linkedin.thirdeye.taskexecution.dataflow.reader.SimpleReader;
-import com.linkedin.thirdeye.taskexecution.impl.dataflow.InMemorySimpleReader;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.ExecutionStatus;
-import com.linkedin.thirdeye.taskexecution.impl.physicaldag.FrameworkNode;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.NodeConfig;
 import com.linkedin.thirdeye.taskexecution.operator.ExecutionResult;
 import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
- * OperatorRunner considers multi-threading.
+ * OperatorRunner is a wrapper class to setup input and gather the output data of a operator.
  */
 public class OperatorRunner<V> extends AbstractOperatorRunner {
-  ExecutionResult<V> operatorResult;
+  private ExecutionResult<V> operatorResult;
 
   public OperatorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass) {
-    this(nodeIdentifier, nodeConfig, operatorClass, null);
-  }
-
-  private OperatorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass,
-      FrameworkNode logicalNode) {
-    super(ensureNonNullNodeIdentifier(nodeIdentifier), nodeConfig, operatorClass, logicalNode);
+    super(ensureNonNullNodeIdentifier(nodeIdentifier), nodeConfig, operatorClass);
   }
 
   private static NodeIdentifier ensureNonNullNodeIdentifier(NodeIdentifier nodeIdentifier) {
@@ -41,13 +32,8 @@ public class OperatorRunner<V> extends AbstractOperatorRunner {
     return executionStatus;
   }
 
-  @Override
-  public Reader getOutputReader() {
-    if (operatorResult != null) {
-      return new InMemorySimpleReader<>(operatorResult.result());
-    } else {
-      return new InMemorySimpleReader<>();
-    }
+  public ExecutionResult<V> getOperatorResult() {
+    return operatorResult;
   }
 
   /**
@@ -56,12 +42,9 @@ public class OperatorRunner<V> extends AbstractOperatorRunner {
    *
    * @return the node identifier of this node (i.e., OperatorRunner).
    */
-  @Override
   public NodeIdentifier call() {
-    NodeIdentifier identifier = null;
     try {
-      identifier = getIdentifier();
-      if (identifier == null) {
+      if (nodeIdentifier == null) {
         throw new IllegalArgumentException("Node identifier cannot be null");
       }
       int numRetry = nodeConfig.numRetryAtError();
@@ -69,13 +52,8 @@ public class OperatorRunner<V> extends AbstractOperatorRunner {
         try {
           OperatorConfig operatorConfig = convertNodeConfigToOperatorConfig(nodeConfig);
           Operator operator = initializeOperator(operatorClass, operatorConfig);
-          Map<NodeIdentifier, SimpleReader> incomingSimpleReaderMap = new HashMap<>();
-          for (Map.Entry<NodeIdentifier, Reader> nodeIdentifierReaderEntry : getIncomingReaderMap().entrySet()) {
-            incomingSimpleReaderMap.put(nodeIdentifierReaderEntry.getKey(),
-                (SimpleReader) nodeIdentifierReaderEntry.getValue());
-          }
           OperatorContext operatorContext =
-              buildInputOperatorContext(nodeIdentifier, incomingSimpleReaderMap, nodeConfig.runWithEmptyInput());
+              buildInputOperatorContext(nodeIdentifier, getIncomingReaderMap(), nodeConfig.runWithEmptyInput());
           if (operatorContext != null) {
             operatorResult = operator.run(operatorContext);
           }
@@ -91,14 +69,14 @@ public class OperatorRunner<V> extends AbstractOperatorRunner {
     } catch (Exception e) {
       setFailure(e);
     }
-    return identifier;
+    return nodeIdentifier;
   }
 
   static OperatorContext buildInputOperatorContext(NodeIdentifier nodeIdentifier,
-      Map<NodeIdentifier, SimpleReader> incomingReader, boolean allowEmptyIncomingResult) {
+      Map<NodeIdentifier, Reader> incomingReader, boolean allowEmptyIncomingResult) {
 
     OperatorContext operatorContext = new OperatorContext(nodeIdentifier);
-    for (Map.Entry<NodeIdentifier, SimpleReader> nodeReadersEntry : incomingReader.entrySet()) {
+    for (Map.Entry<NodeIdentifier, Reader> nodeReadersEntry : incomingReader.entrySet()) {
         operatorContext.addReader(nodeReadersEntry.getKey(), nodeReadersEntry.getValue());
     }
 

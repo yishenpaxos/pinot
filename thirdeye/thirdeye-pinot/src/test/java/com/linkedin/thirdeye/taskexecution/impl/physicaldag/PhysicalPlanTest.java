@@ -68,7 +68,7 @@ public class PhysicalPlanTest {
     PhysicalPlan dag = new PhysicalPlan();
     try {
       PhysicalNode node = new PhysicalNode("", DummyOperator.class);
-      node.setNodeIdentifier(null);
+      node.setIdentifier(null);
       dag.addNode(node);
     } catch (IllegalArgumentException e) {
       return;
