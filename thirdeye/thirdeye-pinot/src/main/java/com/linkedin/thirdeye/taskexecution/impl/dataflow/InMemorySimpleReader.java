@@ -4,6 +4,7 @@ import com.linkedin.thirdeye.taskexecution.dataflow.reader.SimpleReader;
 
 public class InMemorySimpleReader<V> implements SimpleReader<V> {
   private V payload;
+  private boolean isPayloadSet = false;
 
   public InMemorySimpleReader() {
   }
@@ -14,6 +15,12 @@ public class InMemorySimpleReader<V> implements SimpleReader<V> {
 
   public void setPayload(V payload) {
     this.payload = payload;
+    isPayloadSet = true;
+  }
+
+  @Override
+  public boolean hasPayload() {
+    return isPayloadSet;
   }
 
   @Override

@@ -18,7 +18,7 @@ import java.util.Map;
  * OperatorRunner considers multi-threading.
  */
 public class OperatorRunner<V> extends AbstractOperatorRunner {
-  ExecutionResult<V> operatorResult = new ExecutionResult<>();
+  ExecutionResult<V> operatorResult;
 
   public OperatorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass) {
     this(nodeIdentifier, nodeConfig, operatorClass, null);
@@ -43,7 +43,11 @@ public class OperatorRunner<V> extends AbstractOperatorRunner {
 
   @Override
   public Reader getOutputReader() {
-    return new InMemorySimpleReader<>(operatorResult.result());
+    if (operatorResult != null) {
+      return new InMemorySimpleReader<>(operatorResult.result());
+    } else {
+      return new InMemorySimpleReader<>();
+    }
   }
 
   /**

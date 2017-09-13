@@ -37,6 +37,11 @@ public class InMemoryKVReader<K, V> implements KVReader<K, V> {
   }
 
   @Override
+  public boolean hasPayload() {
+    return true;
+  }
+
+  @Override
   public Collection<Map.Entry<K, V>> read() {
     return new ArrayList<>(context.entrySet());
   }

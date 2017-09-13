@@ -263,13 +263,13 @@ public class DAGExecutorBasicTest {
       List<String> executionLog = new ArrayList<>();
       for (Reader r : inputs.values()) {
         SimpleReader<List<String>> reader = (SimpleReader) r;
-        List<String> list = reader.read();
-        if (list != null) {
-          for (String s : list) {
-            if (!executionLog.contains(s)) {
-              executionLog.add(s);
+        if (reader.hasPayload()) {
+          List<String> list = reader.read();
+            for (String s : list) {
+              if (!executionLog.contains(s)) {
+                executionLog.add(s);
+              }
             }
-          }
         }
       }
       executionLog.add(operatorContext.getNodeIdentifier().getName());
