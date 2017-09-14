@@ -11,20 +11,23 @@ public class AbstractOperatorRunnerTest {
 
   @Test
   public void testSuccessInitializeOperator() throws InstantiationException, IllegalAccessException {
-    AbstractOperatorRunner.initializeOperator(OperatorRunnerTest.DummyOperator.class, new OperatorConfig());
+    AbstractOperatorRunner.initiateOperatorInstance(OperatorRunnerTest.DummyOperator.class);
   }
 
   @Test
   public void testFailureInitializeOperator() {
     try {
-      AbstractOperatorRunner.initializeOperator(FailedInitializedOperator.class, new OperatorConfig());
+      AbstractOperatorRunner.initiateOperatorInstance(FailedInitializedOperator.class);
     } catch (Exception e) {
       return;
     }
     Assert.fail();
   }
 
-  public static class FailedInitializedOperator implements Operator {
+  public static class FailedInitializedOperator extends Operator {
+    private FailedInitializedOperator() {
+    }
+
     @Override
     public void initialize(OperatorConfig operatorConfig) {
       throw new UnsupportedOperationException("Failed during initialization IN PURPOSE.");

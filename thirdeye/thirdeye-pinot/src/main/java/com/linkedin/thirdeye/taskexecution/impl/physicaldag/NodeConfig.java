@@ -4,7 +4,6 @@ package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 public class NodeConfig {
   private int numRetryAtError = 0;
   private boolean skipAtFailure = false;
-  private boolean runWithEmptyInput = true;
 
   public int numRetryAtError() {
     return numRetryAtError;
@@ -20,13 +19,5 @@ public class NodeConfig {
 
   public void setSkipAtFailure(boolean skipAtFailure) {
     this.skipAtFailure = skipAtFailure;
-  }
-
-  public boolean runWithEmptyInput() {
-    return runWithEmptyInput;
-  }
-
-  public void setRunWithEmptyInput(boolean runWithEmptyInput) {
-    this.runWithEmptyInput = runWithEmptyInput;
   }
 }

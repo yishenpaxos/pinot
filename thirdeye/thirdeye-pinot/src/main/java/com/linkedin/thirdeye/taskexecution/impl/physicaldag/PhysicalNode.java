@@ -9,9 +9,9 @@ import com.linkedin.thirdeye.taskexecution.operator.ExecutionResult;
 /**
  * A PhysicalNode that executes work using one partition.
  */
-public class PhysicalNode extends AbstractPhysicalNode<PhysicalNode> {
+public class PhysicalNode<V> extends AbstractPhysicalNode<PhysicalNode> {
 
-  private OperatorRunner runner;
+  private OperatorRunner<V> runner;
 
   public PhysicalNode(String name, Class operatorClass) {
     this(new NodeIdentifier(name), operatorClass);
@@ -44,7 +44,7 @@ public class PhysicalNode extends AbstractPhysicalNode<PhysicalNode> {
 
   @Override
   public NodeIdentifier call() throws Exception {
-    runner = new OperatorRunner(nodeIdentifier, nodeConfig, operatorClass);
+    runner = new OperatorRunner<>(nodeIdentifier, nodeConfig, operatorClass);
 
     for (PhysicalNode pNode : this.getIncomingNodes()) {
       // TODO: Get output (writer) from parents and construct inputs (readers)

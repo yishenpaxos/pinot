@@ -248,7 +248,7 @@ public class DAGExecutorBasicTest {
   /**
    * An operator that appends node name to a list, which is passed in from its incoming nodes.
    */
-  public static class LogOperator implements Operator {
+  public static class LogOperator extends Operator<List<String>> {
     private static final Logger LOG = LoggerFactory.getLogger(LogOperator.class);
 
     @Override
@@ -256,7 +256,7 @@ public class DAGExecutorBasicTest {
     }
 
     @Override
-    public ExecutionResult run(OperatorContext operatorContext) {
+    public ExecutionResult<List<String>> run(OperatorContext operatorContext) {
       LOG.info("Running node: {}", operatorContext.getNodeIdentifier().getName());
       Map<NodeIdentifier, Reader> inputs = operatorContext.getInputs();
       List<String> executionLog = new ArrayList<>();
@@ -271,7 +271,7 @@ public class DAGExecutorBasicTest {
         }
       }
       executionLog.add(operatorContext.getNodeIdentifier().getName());
-      ExecutionResult operatorResult = new ExecutionResult();
+      ExecutionResult<List<String>> operatorResult = new ExecutionResult<>();
       operatorResult.setResult(executionLog);
       return operatorResult;
     }
@@ -280,7 +280,7 @@ public class DAGExecutorBasicTest {
   /**
    * An operator that always fails.
    */
-  public static class FailedOperator implements Operator {
+  public static class FailedOperator extends Operator {
     @Override
     public void initialize(OperatorConfig operatorConfig) {
     }

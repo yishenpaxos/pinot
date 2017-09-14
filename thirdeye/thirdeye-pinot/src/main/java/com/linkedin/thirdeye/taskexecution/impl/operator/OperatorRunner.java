@@ -51,12 +51,10 @@ public class OperatorRunner<V> extends AbstractOperatorRunner {
       for (int i = 0; i <= numRetry; ++i) {
         try {
           OperatorConfig operatorConfig = convertNodeConfigToOperatorConfig(nodeConfig);
-          Operator operator = initializeOperator(operatorClass, operatorConfig);
-          OperatorContext operatorContext =
-              buildInputOperatorContext(nodeIdentifier, getIncomingReaderMap(), nodeConfig.runWithEmptyInput());
-          if (operatorContext != null) {
-            operatorResult = operator.run(operatorContext);
-          }
+          Operator<V> operator = initiateOperatorInstance(operatorClass);
+          operator.initialize(operatorConfig);
+          OperatorContext operatorContext = buildInputOperatorContext(nodeIdentifier, getIncomingReaderMap());
+          operatorResult = operator.run(operatorContext);
         } catch (Exception e) {
           if (i == numRetry) {
             setFailure(e);
@@ -73,17 +71,13 @@ public class OperatorRunner<V> extends AbstractOperatorRunner {
   }
 
   static OperatorContext buildInputOperatorContext(NodeIdentifier nodeIdentifier,
-      Map<NodeIdentifier, Reader> incomingReader, boolean allowEmptyIncomingResult) {
+      Map<NodeIdentifier, Reader> incomingReader) {
 
     OperatorContext operatorContext = new OperatorContext(nodeIdentifier);
     for (Map.Entry<NodeIdentifier, Reader> nodeReadersEntry : incomingReader.entrySet()) {
-        operatorContext.addReader(nodeReadersEntry.getKey(), nodeReadersEntry.getValue());
+      operatorContext.addReader(nodeReadersEntry.getKey(), nodeReadersEntry.getValue());
     }
 
-    if (operatorContext.size() != 0 || allowEmptyIncomingResult) {
-      return operatorContext;
-    } else {
-      return null;
-    }
+    return operatorContext;
   }
 }

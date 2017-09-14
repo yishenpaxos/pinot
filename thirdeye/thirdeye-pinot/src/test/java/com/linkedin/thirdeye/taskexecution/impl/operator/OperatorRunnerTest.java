@@ -54,10 +54,8 @@ public class OperatorRunnerTest {
     Reader<Map<String, Integer>> reader3 = new InMemorySimpleReader<>(expectedContext3);
     incomingReaders.put(node3Identifier, reader3);
 
-    final boolean allowEmptyInput = false;
     OperatorContext operatorContext = OperatorRunner
-        .buildInputOperatorContext(new NodeIdentifier("OperatorContextBuilder"), incomingReaders,
-            allowEmptyInput);
+        .buildInputOperatorContext(new NodeIdentifier("OperatorContextBuilder"), incomingReaders);
     Assert.assertNotNull(operatorContext);
 
     Assert.assertEquals(operatorContext.getNodeIdentifier(), new NodeIdentifier("OperatorContextBuilder"));
@@ -81,23 +79,6 @@ public class OperatorRunnerTest {
   }
 
   @Test
-  public void testBuildEmptyInputOperatorContext() {
-    Map<NodeIdentifier, Reader> incomingResultsReader = new HashMap<>();
-
-    boolean allowEmptyInput = false;
-    OperatorContext operatorContextNull = OperatorRunner
-        .buildInputOperatorContext(new NodeIdentifier("OperatorContextBuilder"), incomingResultsReader,
-            allowEmptyInput);
-    Assert.assertNull(operatorContextNull);
-
-    allowEmptyInput = true;
-    OperatorContext operatorContextNotNull = OperatorRunner
-        .buildInputOperatorContext(new NodeIdentifier("OperatorContextBuilder"), incomingResultsReader,
-            allowEmptyInput);
-    Assert.assertNotNull(operatorContextNotNull);
-  }
-
-  @Test
   public void testSuccessRunOfOperator() {
     NodeConfig nodeConfig = new NodeConfig();
     nodeConfig.setSkipAtFailure(false);
@@ -108,7 +89,7 @@ public class OperatorRunnerTest {
     Assert.assertEquals(runner.getExecutionStatus(), ExecutionStatus.SUCCESS);
 
     ExecutionResult operatorResult = runner.getOperatorResult();
-    Assert.assertEquals(operatorResult.result(), Integer.valueOf(0));
+    Assert.assertEquals(operatorResult.result(), 0);
   }
 
   @Test
@@ -140,18 +121,18 @@ public class OperatorRunnerTest {
     Assert.assertNotNull(nodeIdentifier.getName());
   }
 
-  public static class DummyOperator implements Operator {
+  public static class DummyOperator extends Operator<Integer> {
     @Override
     public void initialize(OperatorConfig operatorConfig) {
     }
 
     @Override
-    public ExecutionResult run(OperatorContext operatorContext) {
+    public ExecutionResult<Integer> run(OperatorContext operatorContext) {
       return new ExecutionResult<>(0);
     }
   }
 
-  public static class FailedRunOperator implements Operator {
+  public static class FailedRunOperator extends Operator {
     @Override
     public void initialize(OperatorConfig operatorConfig) {
     }

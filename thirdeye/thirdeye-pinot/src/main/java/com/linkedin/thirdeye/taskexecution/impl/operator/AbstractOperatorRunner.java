@@ -52,12 +52,10 @@ public abstract class AbstractOperatorRunner {
     return null;
   }
 
-  static Operator initializeOperator(Class operatorClass, OperatorConfig operatorConfig)
+  static Operator initiateOperatorInstance(Class operatorClass)
       throws IllegalAccessException, InstantiationException {
     try {
-      Operator operator = (Operator) operatorClass.newInstance();
-      operator.initialize(operatorConfig);
-      return operator;
+      return (Operator) operatorClass.newInstance();
     } catch (Exception e) {
       // We cannot do anything if something bad happens here excepting rethrow the exception.
       LOG.warn("Failed to initialize {}", operatorClass.getName());
