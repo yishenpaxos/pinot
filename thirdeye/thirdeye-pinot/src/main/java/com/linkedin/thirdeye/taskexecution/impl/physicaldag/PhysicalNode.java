@@ -1,24 +1,63 @@
 package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
+import com.linkedin.thirdeye.taskexecution.dag.AbstractNode;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
-import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
-import com.linkedin.thirdeye.taskexecution.impl.dataflow.InMemorySimpleReader;
+import com.linkedin.thirdeye.taskexecution.impl.dataflow.InMemoryCollectionReader;
 import com.linkedin.thirdeye.taskexecution.impl.operator.OperatorRunner;
-import com.linkedin.thirdeye.taskexecution.operator.ExecutionResult;
+import com.linkedin.thirdeye.taskexecution.operator.Operator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A PhysicalNode that executes work using one partition.
  */
-public class PhysicalNode<V> extends AbstractPhysicalNode<PhysicalNode> {
+public class PhysicalNode<OP extends Operator> extends AbstractNode<PhysicalNode, PhysicalEdge> {
+  private static final Logger LOG = LoggerFactory.getLogger(PhysicalNode.class);
 
-  private OperatorRunner<V> runner;
+  private OP operator;
+  private NodeConfig nodeConfig = new NodeConfig();
 
-  public PhysicalNode(String name, Class operatorClass) {
+  private OperatorRunner runner;
+
+  public PhysicalNode(String name, Class operatorClass) throws IllegalAccessException, InstantiationException {
     this(new NodeIdentifier(name), operatorClass);
   }
 
-  public PhysicalNode(NodeIdentifier nodeIdentifier, Class operatorClass) {
-    super(nodeIdentifier, operatorClass);
+  public PhysicalNode(NodeIdentifier nodeIdentifier, Class operatorClass)
+      throws InstantiationException, IllegalAccessException {
+    this(nodeIdentifier, (OP) initiateOperatorInstance(operatorClass));
+  }
+
+  public PhysicalNode(String name, OP operator) {
+    this(new NodeIdentifier(name), operator);
+  }
+
+  public PhysicalNode(NodeIdentifier nodeIdentifier, OP operator) {
+    super(nodeIdentifier);
+    this.operator = operator;
+  }
+
+  private static Operator initiateOperatorInstance(Class operatorClass)
+      throws IllegalAccessException, InstantiationException {
+    try {
+      return (Operator) operatorClass.newInstance();
+    } catch (Exception e) {
+      // We cannot do anything if something bad happens here excepting rethrow the exception.
+      LOG.warn("Failed to initialize {}", operatorClass.getName());
+      throw e;
+    }
+  }
+
+  public NodeConfig getNodeConfig() {
+    return nodeConfig;
+  }
+
+  public void setNodeConfig(NodeConfig nodeConfig) {
+    this.nodeConfig = nodeConfig;
+  }
+
+  public OP getOperator() {
+    return operator;
   }
 
   @Override
@@ -26,32 +65,16 @@ public class PhysicalNode<V> extends AbstractPhysicalNode<PhysicalNode> {
     if (runner != null) {
       return runner.getExecutionStatus();
     } else {
-      new InMemorySimpleReader<>();
+      new InMemoryCollectionReader<>();
     }
     return ExecutionStatus.SKIPPED;
   }
 
   @Override
-  public Reader getOutputReader() {
-    if (runner != null) {
-      ExecutionResult operatorResult = runner.getOperatorResult();
-      if (operatorResult != null) {
-        return new InMemorySimpleReader<>(operatorResult.result());
-      }
-    }
-    return new InMemorySimpleReader<>();
-  }
-
-  @Override
   public NodeIdentifier call() throws Exception {
-    runner = new OperatorRunner<>(nodeIdentifier, nodeConfig, operatorClass);
-
-    for (PhysicalNode pNode : this.getIncomingNodes()) {
-      // TODO: Get output (writer) from parents and construct inputs (readers)
-
-      // TODO: Add node identifier to port identifier mapping
-      runner.addInput(pNode.getIdentifier(), pNode.getOutputReader());
-    }
+    runner = new OperatorRunner<>(nodeIdentifier, nodeConfig, operator);
+    runner.setIncomingEdge(incomingEdge);
+    runner.setOutgoingEdge(outgoingEdge);
 
     return runner.call();
   }

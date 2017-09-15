@@ -19,22 +19,22 @@ import org.slf4j.LoggerFactory;
  * service. An executor takes care of only logical execution (control flow). The physical execution is done by
  * OperatorRunner, which could be executed on other machines.
  */
-public class DAGExecutor<T extends AbstractPhysicalNode> {
+public class DAGExecutor<N extends PhysicalNode, E extends PhysicalEdge> {
   private static final Logger LOG = LoggerFactory.getLogger(DAGExecutor.class);
   private ExecutorCompletionService<NodeIdentifier> executorCompletionService;
 
   // TODO: Persistent the following status to a DB in case of executor unexpectedly dies
   private Set<NodeIdentifier> processedNodes = new HashSet<>();
-  private Map<NodeIdentifier, T> runningNodes = new HashMap<>();
+  private Map<NodeIdentifier, N> runningNodes = new HashMap<>();
 
 
   public DAGExecutor(ExecutorService executorService) {
     this.executorCompletionService = new ExecutorCompletionService<>(executorService);
   }
 
-  public void execute(DAG<T> dag, DAGConfig dagConfig) {
-    Collection<T> nodes = dag.getRootNodes();
-    for (T node : nodes) {
+  public void execute(DAG<N, E> dag, DAGConfig dagConfig) {
+    Collection<N> nodes = dag.getRootNodes();
+    for (N node : nodes) {
       processNode(node, dagConfig);
     }
     while (runningNodes.size() > processedNodes.size()) {
@@ -52,9 +52,9 @@ public class DAGExecutor<T extends AbstractPhysicalNode> {
         }
         processedNodes.add(nodeIdentifier);
         // Search for the next node to execute
-        T node = dag.getNode(nodeIdentifier);
+        N node = dag.getNode(nodeIdentifier);
         for (Object outGoingNode : node.getOutgoingNodes()) {
-          processNode((T) outGoingNode, dagConfig);
+          processNode((N) outGoingNode, dagConfig);
         }
       } catch (InterruptedException | ExecutionException e) {
         // The implementation of OperatorRunner needs to guarantee that this block never happens
@@ -69,7 +69,7 @@ public class DAGExecutor<T extends AbstractPhysicalNode> {
     // TODO: wait all runners are stopped and clean up intermediate data
   }
 
-  private void processNode(T node, DAGConfig dagConfig) {
+  private void processNode(N node, DAGConfig dagConfig) {
     if (!isProcessed(node) && parentsAreProcessed(node)) {
       NodeConfig nodeConfig = dagConfig.getNodeConfig(node.getIdentifier());
       node.setNodeConfig(nodeConfig);
@@ -84,16 +84,16 @@ public class DAGExecutor<T extends AbstractPhysicalNode> {
     return processedNodes.contains(node.getIdentifier());
   }
 
-  private boolean parentsAreProcessed(T node) {
+  private boolean parentsAreProcessed(N node) {
     for (Object pNode : node.getIncomingNodes()) {
-      if (!processedNodes.contains(((T) pNode).getIdentifier())) {
+      if (!processedNodes.contains(((N) pNode).getIdentifier())) {
         return false;
       }
     }
     return true;
   }
 
-  public T getNode(NodeIdentifier nodeIdentifier) {
+  public N getNode(NodeIdentifier nodeIdentifier) {
     return runningNodes.get(nodeIdentifier);
   }
 }

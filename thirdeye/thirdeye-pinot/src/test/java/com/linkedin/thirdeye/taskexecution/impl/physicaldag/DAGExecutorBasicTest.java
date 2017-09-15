@@ -1,17 +1,13 @@
 package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
-import com.linkedin.thirdeye.taskexecution.dag.DAG;
-import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
-import com.linkedin.thirdeye.taskexecution.operator.ExecutionResult;
-import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
+import com.linkedin.thirdeye.taskexecution.operator.SimpleIOOperator;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -31,18 +27,17 @@ public class DAGExecutorBasicTest {
    */
   @Test
   public void testOneNodeExecution() {
-    DAG<PhysicalNode> dag = new PhysicalPlan();
-    PhysicalNode root = new PhysicalNode("root", LogOperator.class);
-    dag.addNode(root);
+    PhysicalPlan dag = new PhysicalPlan();
+    PhysicalNode<LogOperator> start = new PhysicalNode<>("start", new LogOperator());
+    dag.addNode(start);
 
-    DAGExecutor<PhysicalNode> dagExecutor = new DAGExecutor<>(threadPool);
+    DAGExecutor<PhysicalNode, PhysicalEdge> dagExecutor = new DAGExecutor<>(threadPool);
     DAGConfig dagConfig = new DAGConfig();
     dagConfig.setStopAtFailure(true);
     dagExecutor.execute(dag, dagConfig);
-
-    List<String> executionLog = checkAndGetFinalResult(dagExecutor.getNode(root.getIdentifier()));
+    List<String> executionLog = checkAndGetFinalResult(dagExecutor.getNode(start.getIdentifier()));
     List<String> expectedLog = new ArrayList<String>() {{
-      add("root");
+      add("start");
     }};
     Assert.assertEquals(executionLog, expectedLog);
   }
@@ -52,14 +47,14 @@ public class DAGExecutorBasicTest {
    */
   @Test
   public void testOneNodeChainExecution() {
-    DAG<PhysicalNode> dag = new PhysicalPlan();
-    PhysicalNode node1 = new PhysicalNode("1", LogOperator.class);
-    PhysicalNode node2 = new PhysicalNode("2", LogOperator.class);
-    PhysicalNode node3 = new PhysicalNode("3", LogOperator.class);
-    dag.addEdge(node1, node2);
-    dag.addEdge(node2, node3);
+    PhysicalPlan dag = new PhysicalPlan();
+    PhysicalNode<LogOperator> node1 = new PhysicalNode<>("1", new LogOperator());
+    PhysicalNode<LogOperator> node2 = new PhysicalNode<>("2", new LogOperator());
+    PhysicalNode<LogOperator> node3 = new PhysicalNode<>("3", new LogOperator());
+    dag.addEdge((new PhysicalEdge()).connect(node1, node1.getOperator().output, node2, node2.getOperator().input));
+    dag.addEdge((new PhysicalEdge()).connect(node2, node2.getOperator().output, node3, node3.getOperator().input));
 
-    DAGExecutor<PhysicalNode> dagExecutor = new DAGExecutor<>(threadPool);
+    DAGExecutor<PhysicalNode, PhysicalEdge> dagExecutor = new DAGExecutor<>(threadPool);
     dagExecutor.execute(dag, new DAGConfig());
 
     // TODO: Check dagExecutor's execution status
@@ -78,42 +73,43 @@ public class DAGExecutorBasicTest {
 
   /**
    * DAG:
-   *     root1 -> node12 -> leaf1
+   *     start1 -> node12 -> leaf1
    *
-   *     root2 -> node22 ---> node23 ----> leaf2
+   *     start2 -> node22 ---> node23 ----> leaf2
    *                     \             /
    *                      \-> node24 -/
    */
   @Test
   public void testTwoNodeChainsExecution() {
-    DAG<PhysicalNode> dag = new PhysicalPlan();
-    PhysicalNode node11 = new PhysicalNode("root1", LogOperator.class);
-    PhysicalNode node12 = new PhysicalNode("node12", LogOperator.class);
-    PhysicalNode leaf1 = new PhysicalNode("leaf1", LogOperator.class);
-    dag.addEdge(node11, node12);
-    dag.addEdge(node12, leaf1);
+    PhysicalPlan dag = new PhysicalPlan();
+    PhysicalNode<LogOperator> start1 = new PhysicalNode<>("start1", new LogOperator());
+    PhysicalNode<LogOperator> node12 = new PhysicalNode<>("node12", new LogOperator());
+    PhysicalNode<LogOperator> end1 = new PhysicalNode<>("end1", new LogOperator());
+    dag.addEdge((new PhysicalEdge()).connect(start1, start1.getOperator().output, node12, node12.getOperator().input));
+    dag.addEdge((new PhysicalEdge()).connect(node12, node12.getOperator().output, end1, end1.getOperator().input));
 
-    PhysicalNode node21 = new PhysicalNode("root2", LogOperator.class);
-    PhysicalNode node22 = new PhysicalNode("node22", LogOperator.class);
-    PhysicalNode node23 = new PhysicalNode("node23", LogOperator.class);
-    PhysicalNode node24 = new PhysicalNode("node24", LogOperator.class);
-    PhysicalNode leaf2 = new PhysicalNode("leaf2", LogOperator.class);
-    dag.addEdge(node21, node22);
-    dag.addEdge(node22, node23);
-    dag.addEdge(node23, leaf2);
-    dag.addEdge(node22, node24);
-    dag.addEdge(node24, leaf2);
+    PhysicalNode<LogOperator> start2 = new PhysicalNode<>("start2", new LogOperator());
+    PhysicalNode<LogOperator> node22 = new PhysicalNode<>("node22", new LogOperator());
+    PhysicalNode<LogOperator> node23 = new PhysicalNode<>("node23", new LogOperator());
+    PhysicalNode<LogOperator> node24 = new PhysicalNode<>("node24", new LogOperator());
+    PhysicalNode<LogOperator> end2 = new PhysicalNode<>("end2", new LogOperator());
+    dag.addEdge((new PhysicalEdge()).connect(start2, start2.getOperator().output, node22, node22.getOperator().input));
+    dag.addEdge((new PhysicalEdge()).connect(node22, node22.getOperator().output, node23, node23.getOperator().input));
+    dag.addEdge((new PhysicalEdge()).connect(node23, node23.getOperator().output, end2, end2.getOperator().input));
+    dag.addEdge((new PhysicalEdge()).connect(node22, node22.getOperator().output, node24, node24.getOperator().input));
+    dag.addEdge((new PhysicalEdge()).connect(node24, node24.getOperator().output, end2, end2.getOperator().input));
 
-    DAGExecutor<PhysicalNode> dagExecutor = new DAGExecutor<>(threadPool);
+
+    DAGExecutor<PhysicalNode, PhysicalEdge> dagExecutor = new DAGExecutor<>(threadPool);
     dagExecutor.execute(dag, new DAGConfig());
 
     // Check path 1
     {
-      List<String> executionLog = checkAndGetFinalResult(dagExecutor.getNode(leaf1.getIdentifier()));
+      List<String> executionLog = checkAndGetFinalResult(dagExecutor.getNode(end1.getIdentifier()));
       List<String> expectedResult = new ArrayList<String>() {{
-        add("root1");
+        add("start1");
         add("node12");
-        add("leaf1");
+        add("end1");
       }};
       List<List<String>> expectedResults = new ArrayList<>();
       expectedResults.add(expectedResult);
@@ -121,18 +117,18 @@ public class DAGExecutorBasicTest {
     }
     // Check path 2
     {
-      List<String> executionLog = checkAndGetFinalResult(dagExecutor.getNode(leaf2.getIdentifier()));
+      List<String> executionLog = checkAndGetFinalResult(dagExecutor.getNode(end2.getIdentifier()));
       List<String> expectedResult1 = new ArrayList<String>() {{
-        add("root2");
+        add("start2");
         add("node22");
         add("node23");
-        add("leaf2");
+        add("end2");
       }};
       List<String> expectedResult2 = new ArrayList<String>() {{
-        add("root2");
+        add("start2");
         add("node22");
         add("node24");
-        add("leaf2");
+        add("end2");
       }};
       List<List<String>> expectedResults = new ArrayList<>();
       expectedResults.add(expectedResult1);
@@ -146,69 +142,72 @@ public class DAGExecutorBasicTest {
    *           /---------> 12 -------------\
    *         /                              \
    *       /    /---------> 23 ------------\ \
-   * root -> 22                           -----> leaf
+   * start-> 22                           -----> end
    *            \-> 24 --> 25 -----> 27 -/
    *                   \         /
    *                    \-> 26 -/
    */
   @Test
   public void testComplexGraphExecution() {
-    DAG<PhysicalNode> dag = new PhysicalPlan();
-    PhysicalNode root = new PhysicalNode("root", LogOperator.class);
-    PhysicalNode leaf = new PhysicalNode("leaf", LogOperator.class);
+    PhysicalPlan dag = new PhysicalPlan();
+    PhysicalNode<LogOperator> start = new PhysicalNode<>("start", new LogOperator());
+    PhysicalNode<LogOperator> end = new PhysicalNode<>("end", new LogOperator());
 
     // sub-path 2
-    PhysicalNode node22 = new PhysicalNode("22", LogOperator.class);
-    PhysicalNode node23 = new PhysicalNode("23", LogOperator.class);
-    PhysicalNode node24 = new PhysicalNode("24", LogOperator.class);
-    PhysicalNode node25 = new PhysicalNode("25", LogOperator.class);
-    PhysicalNode node26 = new PhysicalNode("26", LogOperator.class);
-    PhysicalNode node27 = new PhysicalNode("27", LogOperator.class);
-    dag.addEdge(root, node22);
-    dag.addEdge(node22, node23);
-    dag.addEdge(node22, node24);
-    dag.addEdge(node24, node25);
-    dag.addEdge(node24, node26);
-    dag.addEdge(node25, node27);
-    dag.addEdge(node26, node27);
-    dag.addEdge(node23, leaf);
-    dag.addEdge(node27, leaf);
+    PhysicalNode<LogOperator> node22 = new PhysicalNode<>("22", new LogOperator());
+    PhysicalNode<LogOperator> node23 = new PhysicalNode<>("23", new LogOperator());
+    PhysicalNode<LogOperator> node24 = new PhysicalNode<>("24", new LogOperator());
+    PhysicalNode<LogOperator> node25 = new PhysicalNode<>("25", new LogOperator());
+    PhysicalNode<LogOperator> node26 = new PhysicalNode<>("26", new LogOperator());
+    PhysicalNode<LogOperator> node27 = new PhysicalNode<>("27", new LogOperator());
+    dag.addEdge((new PhysicalEdge()).connect(start, start.getOperator().output, node22, node22.getOperator().input));
+    dag.addEdge((new PhysicalEdge()).connect(node22, node22.getOperator().output, node23, node23.getOperator().input));
+    dag.addEdge((new PhysicalEdge()).connect(node22, node22.getOperator().output, node24, node24.getOperator().input));
+    dag.addEdge((new PhysicalEdge()).connect(node24, node24.getOperator().output, node25, node25.getOperator().input));
+    dag.addEdge((new PhysicalEdge()).connect(node24, node24.getOperator().output, node26, node26.getOperator().input));
+    dag.addEdge((new PhysicalEdge()).connect(node25, node25.getOperator().output, node27, node27.getOperator().input));
+    dag.addEdge((new PhysicalEdge()).connect(node26, node26.getOperator().output, node27, node27.getOperator().input));
+    dag.addEdge((new PhysicalEdge()).connect(node23, node23.getOperator().output, end, end.getOperator().input));
+    dag.addEdge((new PhysicalEdge()).connect(node27, node27.getOperator().output, end, end.getOperator().input));
+
+    PhysicalEdge edge = new PhysicalEdge();
+    edge.connect(start, start.getOperator().output, end, end.getOperator().input);
 
     // sub-path 1
-    PhysicalNode node12 = new PhysicalNode("12", LogOperator.class);
-    dag.addEdge(root, node12);
-    dag.addEdge(node12, leaf);
+    PhysicalNode<LogOperator> node12 = new PhysicalNode<>("12", new LogOperator());
+    dag.addEdge((new PhysicalEdge()).connect(start, start.getOperator().output, node12, node12.getOperator().input));
+    dag.addEdge((new PhysicalEdge()).connect(node12, node12.getOperator().output, end, end.getOperator().input));
 
-    DAGExecutor<PhysicalNode> dagExecutor = new DAGExecutor<>(threadPool);
+    DAGExecutor<PhysicalNode, PhysicalEdge> dagExecutor = new DAGExecutor<>(threadPool);
     dagExecutor.execute(dag, new DAGConfig());
 
-    List<String> executionLog = checkAndGetFinalResult(dagExecutor.getNode(leaf.getIdentifier()));
+    List<String> executionLog = checkAndGetFinalResult(dagExecutor.getNode(end.getIdentifier()));
     List<String> expectedOrder1 = new ArrayList<String>() {{
-      add("root");
+      add("start");
       add("12");
-      add("leaf");
+      add("end");
     }};
     List<String> expectedOrder2 = new ArrayList<String>() {{
-      add("root");
+      add("start");
       add("22");
       add("23");
-      add("leaf");
+      add("end");
     }};
     List<String> expectedOrder3 = new ArrayList<String>() {{
-      add("root");
+      add("start");
       add("22");
       add("24");
       add("25");
       add("27");
-      add("leaf");
+      add("end");
     }};
     List<String> expectedOrder4 = new ArrayList<String>() {{
-      add("root");
+      add("start");
       add("22");
       add("24");
       add("26");
       add("27");
-      add("leaf");
+      add("end");
     }};
     List<List<String>> expectedOrders = new ArrayList<>();
     expectedOrders.add(expectedOrder1);
@@ -223,16 +222,16 @@ public class DAGExecutorBasicTest {
    */
   @Test
   public void testFailedChainExecution() {
-    DAG<PhysicalNode> dag = new PhysicalPlan();
-    PhysicalNode node1 = new PhysicalNode("1", LogOperator.class);
-    PhysicalNode node2 = new PhysicalNode("2", FailedOperator.class);
-    PhysicalNode node3 = new PhysicalNode("3", LogOperator.class);
-    dag.addEdge(node1, node2);
-    dag.addEdge(node2, node3);
+    PhysicalPlan dag = new PhysicalPlan();
+    PhysicalNode<LogOperator> node1 = new PhysicalNode<>("1", new LogOperator());
+    PhysicalNode<FailedOperator> node2 = new PhysicalNode<>("2", new FailedOperator());
+    PhysicalNode<LogOperator> node3 = new PhysicalNode<>("3", new LogOperator());
+    dag.addEdge((new PhysicalEdge()).connect(node1, node1.getOperator().output, node2, node2.getOperator().input));
+    dag.addEdge((new PhysicalEdge()).connect(node2, node2.getOperator().output, node3, node3.getOperator().input));
 
     DAGConfig dagConfig = new DAGConfig();
     dagConfig.setStopAtFailure(false);
-    DAGExecutor<PhysicalNode> dagExecutor = new DAGExecutor<>(threadPool);
+    DAGExecutor<PhysicalNode, PhysicalEdge> dagExecutor = new DAGExecutor<>(threadPool);
     dagExecutor.execute(dag, dagConfig);
 
     List<String> executionLog = checkAndGetFinalResult(dagExecutor.getNode(node3.getIdentifier()));
@@ -248,7 +247,7 @@ public class DAGExecutorBasicTest {
   /**
    * An operator that appends node name to a list, which is passed in from its incoming nodes.
    */
-  public static class LogOperator extends Operator<List<String>> {
+  public static class LogOperator extends SimpleIOOperator<List<String>, List<String>> {
     private static final Logger LOG = LoggerFactory.getLogger(LogOperator.class);
 
     @Override
@@ -256,37 +255,33 @@ public class DAGExecutorBasicTest {
     }
 
     @Override
-    public ExecutionResult<List<String>> run(OperatorContext operatorContext) {
+    public void run(OperatorContext operatorContext) {
       LOG.info("Running node: {}", operatorContext.getNodeIdentifier().getName());
-      Map<NodeIdentifier, Reader> inputs = operatorContext.getInputs();
       List<String> executionLog = new ArrayList<>();
-      for (Reader<List<String>> reader : inputs.values()) {
-        if (reader.hasPayload()) {
-          List<String> list = reader.read();
-            for (String s : list) {
-              if (!executionLog.contains(s)) {
-                executionLog.add(s);
-              }
-            }
+      Reader<List<String>> reader = input.getReader();
+      while (reader.hasNext()) {
+        List<String> list = reader.next();
+        for (String s : list) {
+          if (!executionLog.contains(s)) {
+            executionLog.add(s);
+          }
         }
       }
       executionLog.add(operatorContext.getNodeIdentifier().getName());
-      ExecutionResult<List<String>> operatorResult = new ExecutionResult<>();
-      operatorResult.setResult(executionLog);
-      return operatorResult;
+      output.getWriter().write(executionLog);
     }
   }
 
   /**
    * An operator that always fails.
    */
-  public static class FailedOperator extends Operator {
+  public static class FailedOperator extends SimpleIOOperator<List<String>, List<String>> {
     @Override
     public void initialize(OperatorConfig operatorConfig) {
     }
 
     @Override
-    public ExecutionResult run(OperatorContext operatorContext) {
+    public void run(OperatorContext operatorContext) {
       throw new UnsupportedOperationException("Failed in purpose.");
     }
   }
@@ -298,13 +293,10 @@ public class DAGExecutorBasicTest {
    *
    * @return the final execution log of the DAG.
    */
-  static List<String> checkAndGetFinalResult(PhysicalNode node) {
-    Reader<List<String>> reader = node.getOutputReader();
-    Assert.assertNotNull(reader);
-
-    List<String> finalResult = reader.read();
-    Assert.assertNotNull(finalResult);
-    return finalResult;
+  private static List<String> checkAndGetFinalResult(PhysicalNode<LogOperator> node) {
+    Reader<List<String>> reader = node.getOperator().output.getWriter().toReader();
+    Assert.assertTrue(reader.hasNext());
+    return reader.next();
   }
 
   /**

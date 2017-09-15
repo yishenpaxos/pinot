@@ -1,7 +1,5 @@
 package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
-import com.linkedin.thirdeye.taskexecution.dag.DAG;
-import com.linkedin.thirdeye.taskexecution.operator.ExecutionResult;
 import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
@@ -10,8 +8,8 @@ import org.testng.annotations.Test;
 
 
 public class PhysicalPlanTest {
-  private DAG<PhysicalNode> dag;
-  private PhysicalNode root;
+  private PhysicalPlan dag;
+  private PhysicalNode<DummyOperator> start;
 
   @Test
   public void testCreation() {
@@ -25,8 +23,8 @@ public class PhysicalPlanTest {
   @Test(dependsOnMethods = {"testCreation"})
   public void testAddRoot() {
     dag = new PhysicalPlan();
-    root = new PhysicalNode("1", DummyOperator.class);
-    dag.addNode(root);
+    start = new PhysicalNode<>("1", new DummyOperator());
+    dag.addNode(start);
 
     Assert.assertEquals(dag.getRootNodes().size(), 1);
     Assert.assertEquals(dag.getAllNodes().size(), 1);
@@ -36,10 +34,10 @@ public class PhysicalPlanTest {
 
   @Test(dependsOnMethods = {"testCreation", "testAddRoot"})
   public void testAddDuplicatedNode() {
-    PhysicalNode node2 = new PhysicalNode("1", DummyOperator.class);
+    PhysicalNode node2 = new PhysicalNode<>("1", new DummyOperator());
     PhysicalNode dagNode1 = dag.addNode(node2);
 
-    Assert.assertEquals(dagNode1, root);
+    Assert.assertEquals(dagNode1, start);
     Assert.assertEquals(dag.getRootNodes().size(), 1);
     Assert.assertEquals(dag.getAllNodes().size(), 1);
     Assert.assertEquals(dag.getLeafNodes().size(), 1);
@@ -47,17 +45,17 @@ public class PhysicalPlanTest {
 
   @Test(dependsOnMethods = {"testCreation", "testAddRoot", "testAddDuplicatedNode"})
   public void testAddNodes() {
-    PhysicalNode node2 = new PhysicalNode("2", DummyOperator.class);
+    PhysicalNode node2 = new PhysicalNode<>("2", new DummyOperator());
     dag.addNode(node2);
-    dag.addEdge(root, node2);
+    dag.addEdge((new PhysicalEdge()).connect(start, node2));
     Assert.assertEquals(dag.getRootNodes().size(), 1);
     Assert.assertEquals(dag.getAllNodes().size(), 2);
     Assert.assertEquals(dag.getLeafNodes().size(), 1);
 
-    PhysicalNode node3 = new PhysicalNode("3", DummyOperator.class);
+    PhysicalNode node3 = new PhysicalNode<>("3", new DummyOperator());
     // The following line should be automatically executed in the addEdge method.
     // dag.addNode(node3);
-    dag.addEdge(root, node3);
+    dag.addEdge((new PhysicalEdge()).connect(start, node3));
     Assert.assertEquals(dag.getRootNodes().size(), 1);
     Assert.assertEquals(dag.getAllNodes().size(), 3);
     Assert.assertEquals(dag.getLeafNodes().size(), 2);
@@ -67,10 +65,10 @@ public class PhysicalPlanTest {
   public void testAddNodeWithNullNodeIdentifier() {
     PhysicalPlan dag = new PhysicalPlan();
     try {
-      PhysicalNode node = new PhysicalNode("", DummyOperator.class);
+      PhysicalNode node = new PhysicalNode<>("", new DummyOperator());
       node.setIdentifier(null);
       dag.addNode(node);
-    } catch (IllegalArgumentException e) {
+    } catch (NullPointerException e) {
       return;
     }
     Assert.fail();
@@ -82,8 +80,7 @@ public class PhysicalPlanTest {
     }
 
     @Override
-    public ExecutionResult run(OperatorContext operatorContext) {
-      return null;
+    public void run(OperatorContext operatorContext) {
     }
   }
 }

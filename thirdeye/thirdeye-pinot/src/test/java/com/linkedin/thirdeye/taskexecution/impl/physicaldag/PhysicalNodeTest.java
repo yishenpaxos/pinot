@@ -1,21 +1,30 @@
 package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
-import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
+import com.linkedin.thirdeye.taskexecution.operator.Operator;
+import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
+import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class PhysicalNodeTest {
-  private PhysicalNode node;
+  private PhysicalNode<DummyOperator> node;
   @Test
   public void testCreation() throws Exception {
-    node = new PhysicalNode("Test", null);
+    node = new PhysicalNode<>("Test", new DummyOperator());
   }
 
   @Test (dependsOnMethods = "testCreation")
-  public void testEmptyLogicalNode() throws Exception {
+  public void testEmptyNode() throws Exception {
     Assert.assertEquals(node.getExecutionStatus(), ExecutionStatus.SKIPPED);
-    Reader reader = node.getOutputReader();
-    Assert.assertFalse(reader.hasPayload());
   }
 
+  public static class DummyOperator extends Operator {
+    @Override
+    public void initialize(OperatorConfig operatorConfig) {
+    }
+
+    @Override
+    public void run(OperatorContext operatorContext) {
+    }
+  }
 }

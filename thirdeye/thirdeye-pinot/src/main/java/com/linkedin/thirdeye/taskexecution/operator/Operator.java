@@ -1,11 +1,8 @@
 package com.linkedin.thirdeye.taskexecution.operator;
 
-import com.google.common.reflect.TypeToken;
-
-public abstract class Operator<V> {
-//  TypeToken<V> type = new TypeToken<V>(getClass()) {};
+public abstract class Operator {
 
   public abstract void initialize(OperatorConfig operatorConfig);
 
-  public abstract ExecutionResult<V> run(OperatorContext operatorContext);
+  public abstract void run(OperatorContext operatorContext);
 }

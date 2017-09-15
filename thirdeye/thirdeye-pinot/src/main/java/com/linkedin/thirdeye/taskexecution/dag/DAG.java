@@ -2,24 +2,25 @@ package com.linkedin.thirdeye.taskexecution.dag;
 
 import java.util.Collection;
 
-public interface DAG<T extends Node> {
+public interface DAG<N extends Node, E extends Edge> {
 
   /**
    * Adds a node to the DAG.
    *
    * @param node the node to be added to the DAG.
    *
-   * @return the node that has been added to the DAG.
+   * @return the node instance that has been added to the DAG.
    */
-  T addNode(T node);
+  N addNode(N node);
 
   /**
-   * Adds an edge with the given source and sink nodes.
+   * Adds an edge to the DAG.
    *
-   * @param source the source of the edge.
-   * @param sink the sink of the edge.
+   * @param edge the edge to be added to the DAG.
+   *
+   * @return the edge instance that has been added to the DAG.
    */
-  void addEdge(T source, T sink);
+  E addEdge(E edge);
 
   /**
    * Returns the node with the given {@link NodeIdentifier}.
@@ -28,7 +29,7 @@ public interface DAG<T extends Node> {
    *
    * @return the node with the given {@link NodeIdentifier}.
    */
-  T getNode(NodeIdentifier nodeIdentifier);
+  N getNode(NodeIdentifier nodeIdentifier);
 
   /**
    * Returns the number of nodes in the DAG.
@@ -42,19 +43,19 @@ public interface DAG<T extends Node> {
    *
    * @return all nodes that do not have incoming edges.
    */
-  Collection<T> getRootNodes();
+  Collection<N> getRootNodes();
 
   /**
    * Returns all nodes that do not have outgoing edges.
    *
    * @return all nodes that do not have outgoing edges.
    */
-  Collection<T> getLeafNodes();
+  Collection<N> getLeafNodes();
 
   /**
    * Returns all nodes in the DAG.
    *
    * @return all nodes in the DAG.
    */
-  Collection<T> getAllNodes();
+  Collection<N> getAllNodes();
 }

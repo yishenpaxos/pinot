@@ -1,8 +1,8 @@
 package com.linkedin.thirdeye.taskexecution.dataflow.reader;
 
-public interface Reader<V> {
+public interface Reader<T> {
 
-  boolean hasPayload();
+  boolean hasNext();
 
-  V read();
+  T next();
 }

@@ -4,10 +4,13 @@ import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.ExecutionStatus;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.NodeConfig;
+import com.linkedin.thirdeye.taskexecution.impl.physicaldag.PhysicalEdge;
 import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,15 +18,25 @@ public abstract class AbstractOperatorRunner {
   private static final Logger LOG = LoggerFactory.getLogger(AbstractOperatorRunner.class);
 
   protected NodeIdentifier nodeIdentifier = new NodeIdentifier();
-  protected Class operatorClass;
+  protected Operator operator;
   protected NodeConfig nodeConfig = new NodeConfig();
   private Map<NodeIdentifier, Reader> incomingReaderMap = new HashMap<>();
   protected ExecutionStatus executionStatus = ExecutionStatus.RUNNING;
+  Set<PhysicalEdge> incomingEdge = Collections.emptySet();
+  Set<PhysicalEdge> outgoingEdge = Collections.emptySet();
 
-  public AbstractOperatorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Class operatorClass) {
+  public AbstractOperatorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Operator operator) {
     this.nodeIdentifier = nodeIdentifier;
     this.nodeConfig = nodeConfig;
-    this.operatorClass = operatorClass;
+    this.operator = operator;
+  }
+
+  public void setIncomingEdge(Set<PhysicalEdge> incomingEdge) {
+    this.incomingEdge = incomingEdge;
+  }
+
+  public void setOutgoingEdge(Set<PhysicalEdge> outgoingEdge) {
+    this.outgoingEdge = outgoingEdge;
   }
 
   public void addInput(NodeIdentifier nodeIdentifier, Reader reader) {
@@ -50,16 +63,5 @@ public abstract class AbstractOperatorRunner {
   // TODO: Implement this method
   static OperatorConfig convertNodeConfigToOperatorConfig(NodeConfig nodeConfig) {
     return null;
-  }
-
-  static Operator initiateOperatorInstance(Class operatorClass)
-      throws IllegalAccessException, InstantiationException {
-    try {
-      return (Operator) operatorClass.newInstance();
-    } catch (Exception e) {
-      // We cannot do anything if something bad happens here excepting rethrow the exception.
-      LOG.warn("Failed to initialize {}", operatorClass.getName());
-      throw e;
-    }
   }
 }
