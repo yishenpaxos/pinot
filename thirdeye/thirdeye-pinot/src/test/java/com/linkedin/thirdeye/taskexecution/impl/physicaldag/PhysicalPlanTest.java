@@ -48,6 +48,7 @@ public class PhysicalPlanTest {
     PhysicalNode node2 = new PhysicalNode<>("2", new DummyOperator());
     dag.addNode(node2);
     dag.addEdge((new PhysicalEdge()).connect(start, node2));
+    dag.addEdge((new PhysicalEdge()).connect(start, node2));
     Assert.assertEquals(dag.getRootNodes().size(), 1);
     Assert.assertEquals(dag.getAllNodes().size(), 2);
     Assert.assertEquals(dag.getLeafNodes().size(), 1);

@@ -5,6 +5,7 @@ import com.linkedin.thirdeye.taskexecution.dag.Edge;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.InputPort;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
 import com.linkedin.thirdeye.taskexecution.dataflow.writer.OutputPort;
+import com.linkedin.thirdeye.taskexecution.operator.SimpleIOOperator;
 
 public class PhysicalEdge implements Edge {
   private PhysicalNode source;
@@ -18,13 +19,21 @@ public class PhysicalEdge implements Edge {
 
     this.source = source;
     this.sink = sink;
+
     return this;
   }
 
-  public <T> PhysicalEdge connect(PhysicalNode source, OutputPort<? extends T> sourcePort, PhysicalNode sink,
+  public <T> PhysicalEdge connectPort(PhysicalNode<? extends SimpleIOOperator<?, ? extends T>> source,
+      PhysicalNode<? extends SimpleIOOperator<? super T, ?>> sink) {
+
+    return connectPort(source, source.getOperator().getOutputPort(), sink, sink.getOperator().getInputPort());
+  }
+
+  public <T> PhysicalEdge connectPort(PhysicalNode source, OutputPort<? extends T> sourcePort, PhysicalNode sink,
       InputPort<? super T> sinkPort) {
     Preconditions.checkArgument(source.getOperator() == sourcePort.getOperator());
     Preconditions.checkArgument(sink.getOperator() == sinkPort.getOperator());
+
     this.source = source;
     this.sink = sink;
     this.sourcePort = sourcePort;

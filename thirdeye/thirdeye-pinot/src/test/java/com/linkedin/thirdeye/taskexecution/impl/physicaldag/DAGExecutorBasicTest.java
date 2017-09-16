@@ -51,8 +51,8 @@ public class DAGExecutorBasicTest {
     PhysicalNode<LogOperator> node1 = new PhysicalNode<>("1", new LogOperator());
     PhysicalNode<LogOperator> node2 = new PhysicalNode<>("2", new LogOperator());
     PhysicalNode<LogOperator> node3 = new PhysicalNode<>("3", new LogOperator());
-    dag.addEdge((new PhysicalEdge()).connect(node1, node1.getOperator().output, node2, node2.getOperator().input));
-    dag.addEdge((new PhysicalEdge()).connect(node2, node2.getOperator().output, node3, node3.getOperator().input));
+    dag.addEdge((new PhysicalEdge()).connectPort(node1, node2));
+    dag.addEdge((new PhysicalEdge()).connectPort(node2, node3));
 
     DAGExecutor<PhysicalNode, PhysicalEdge> dagExecutor = new DAGExecutor<>(threadPool);
     dagExecutor.execute(dag, new DAGConfig());
@@ -83,19 +83,19 @@ public class DAGExecutorBasicTest {
     PhysicalNode<LogOperator> start1 = new PhysicalNode<>("start1", new LogOperator());
     PhysicalNode<LogOperator> node12 = new PhysicalNode<>("node12", new LogOperator());
     PhysicalNode<LogOperator> end1 = new PhysicalNode<>("end1", new LogOperator());
-    dag.addEdge((new PhysicalEdge()).connect(start1, start1.getOperator().output, node12, node12.getOperator().input));
-    dag.addEdge((new PhysicalEdge()).connect(node12, node12.getOperator().output, end1, end1.getOperator().input));
+    dag.addEdge((new PhysicalEdge()).connectPort(start1, node12));
+    dag.addEdge((new PhysicalEdge()).connectPort(node12, end1));
 
     PhysicalNode<LogOperator> start2 = new PhysicalNode<>("start2", new LogOperator());
     PhysicalNode<LogOperator> node22 = new PhysicalNode<>("node22", new LogOperator());
     PhysicalNode<LogOperator> node23 = new PhysicalNode<>("node23", new LogOperator());
     PhysicalNode<LogOperator> node24 = new PhysicalNode<>("node24", new LogOperator());
     PhysicalNode<LogOperator> end2 = new PhysicalNode<>("end2", new LogOperator());
-    dag.addEdge((new PhysicalEdge()).connect(start2, start2.getOperator().output, node22, node22.getOperator().input));
-    dag.addEdge((new PhysicalEdge()).connect(node22, node22.getOperator().output, node23, node23.getOperator().input));
-    dag.addEdge((new PhysicalEdge()).connect(node23, node23.getOperator().output, end2, end2.getOperator().input));
-    dag.addEdge((new PhysicalEdge()).connect(node22, node22.getOperator().output, node24, node24.getOperator().input));
-    dag.addEdge((new PhysicalEdge()).connect(node24, node24.getOperator().output, end2, end2.getOperator().input));
+    dag.addEdge((new PhysicalEdge()).connectPort(start2,  node22));
+    dag.addEdge((new PhysicalEdge()).connectPort(node22,  node23));
+    dag.addEdge((new PhysicalEdge()).connectPort(node23,  end2));
+    dag.addEdge((new PhysicalEdge()).connectPort(node22,  node24));
+    dag.addEdge((new PhysicalEdge()).connectPort(node24,  end2));
 
 
     DAGExecutor<PhysicalNode, PhysicalEdge> dagExecutor = new DAGExecutor<>(threadPool);
@@ -151,6 +151,12 @@ public class DAGExecutorBasicTest {
     PhysicalNode<LogOperator> start = new PhysicalNode<>("start", new LogOperator());
     PhysicalNode<LogOperator> end = new PhysicalNode<>("end", new LogOperator());
 
+    // sub-path 3
+    PhysicalNode<IntLogOperator> node32 = new PhysicalNode<>("32", new IntLogOperator());
+    // The following two lines should NOT compile because of static type checking
+//    dag.addEdge((new PhysicalEdge()).connectPort(node32,  end));
+//    dag.addEdge((new PhysicalEdge()).connectPort(node32, node32.getOperator().getOutput(), end, end.getOperator().getInput()));
+
     // sub-path 2
     PhysicalNode<LogOperator> node22 = new PhysicalNode<>("22", new LogOperator());
     PhysicalNode<LogOperator> node23 = new PhysicalNode<>("23", new LogOperator());
@@ -158,23 +164,24 @@ public class DAGExecutorBasicTest {
     PhysicalNode<LogOperator> node25 = new PhysicalNode<>("25", new LogOperator());
     PhysicalNode<LogOperator> node26 = new PhysicalNode<>("26", new LogOperator());
     PhysicalNode<LogOperator> node27 = new PhysicalNode<>("27", new LogOperator());
-    dag.addEdge((new PhysicalEdge()).connect(start, start.getOperator().output, node22, node22.getOperator().input));
-    dag.addEdge((new PhysicalEdge()).connect(node22, node22.getOperator().output, node23, node23.getOperator().input));
-    dag.addEdge((new PhysicalEdge()).connect(node22, node22.getOperator().output, node24, node24.getOperator().input));
-    dag.addEdge((new PhysicalEdge()).connect(node24, node24.getOperator().output, node25, node25.getOperator().input));
-    dag.addEdge((new PhysicalEdge()).connect(node24, node24.getOperator().output, node26, node26.getOperator().input));
-    dag.addEdge((new PhysicalEdge()).connect(node25, node25.getOperator().output, node27, node27.getOperator().input));
-    dag.addEdge((new PhysicalEdge()).connect(node26, node26.getOperator().output, node27, node27.getOperator().input));
-    dag.addEdge((new PhysicalEdge()).connect(node23, node23.getOperator().output, end, end.getOperator().input));
-    dag.addEdge((new PhysicalEdge()).connect(node27, node27.getOperator().output, end, end.getOperator().input));
+    dag.addEdge((new PhysicalEdge()).connectPort(start, node22));
+    dag.addEdge((new PhysicalEdge()).connectPort(start, node22));
+    dag.addEdge((new PhysicalEdge()).connectPort(node22, node23));
+    dag.addEdge((new PhysicalEdge()).connectPort(node22, node24));
+    dag.addEdge((new PhysicalEdge()).connectPort(node24, node25));
+    dag.addEdge((new PhysicalEdge()).connectPort(node24, node26));
+    dag.addEdge((new PhysicalEdge()).connectPort(node25, node27));
+    dag.addEdge((new PhysicalEdge()).connectPort(node26, node27));
+    dag.addEdge((new PhysicalEdge()).connectPort(node23, end));
+    dag.addEdge((new PhysicalEdge()).connectPort(node27, end));
 
     PhysicalEdge edge = new PhysicalEdge();
-    edge.connect(start, start.getOperator().output, end, end.getOperator().input);
+    edge.connectPort(start,  end);
 
     // sub-path 1
     PhysicalNode<LogOperator> node12 = new PhysicalNode<>("12", new LogOperator());
-    dag.addEdge((new PhysicalEdge()).connect(start, start.getOperator().output, node12, node12.getOperator().input));
-    dag.addEdge((new PhysicalEdge()).connect(node12, node12.getOperator().output, end, end.getOperator().input));
+    dag.addEdge((new PhysicalEdge()).connectPort(start,  node12));
+    dag.addEdge((new PhysicalEdge()).connectPort(node12,  end));
 
     DAGExecutor<PhysicalNode, PhysicalEdge> dagExecutor = new DAGExecutor<>(threadPool);
     dagExecutor.execute(dag, new DAGConfig());
@@ -224,8 +231,8 @@ public class DAGExecutorBasicTest {
     PhysicalNode<LogOperator> node1 = new PhysicalNode<>("1", new LogOperator());
     PhysicalNode<FailedOperator> node2 = new PhysicalNode<>("2", new FailedOperator());
     PhysicalNode<LogOperator> node3 = new PhysicalNode<>("3", new LogOperator());
-    dag.addEdge((new PhysicalEdge()).connect(node1, node1.getOperator().output, node2, node2.getOperator().input));
-    dag.addEdge((new PhysicalEdge()).connect(node2, node2.getOperator().output, node3, node3.getOperator().input));
+    dag.addEdge((new PhysicalEdge()).connectPort(node1,  node2));
+    dag.addEdge((new PhysicalEdge()).connectPort(node2,  node3));
 
     DAGConfig dagConfig = new DAGConfig();
     dagConfig.setStopAtFailure(false);
@@ -256,7 +263,7 @@ public class DAGExecutorBasicTest {
     public void run(OperatorContext operatorContext) {
       LOG.info("Running node: {}", operatorContext.getNodeIdentifier().getName());
       List<String> executionLog = new ArrayList<>();
-      Reader<List<String>> reader = input.getReader();
+      Reader<List<String>> reader = getInputPort().getReader();
       while (reader.hasNext()) {
         List<String> list = reader.next();
         for (String s : list) {
@@ -266,7 +273,7 @@ public class DAGExecutorBasicTest {
         }
       }
       executionLog.add(operatorContext.getNodeIdentifier().getName());
-      output.getWriter().write(executionLog);
+      getOutputPort().getWriter().write(executionLog);
     }
   }
 
@@ -285,6 +292,19 @@ public class DAGExecutorBasicTest {
   }
 
   /**
+   * An operator for testing incompatible input and output port type.
+   */
+  public static class IntLogOperator extends SimpleIOOperator<Integer, Integer> {
+    @Override
+    public void initialize(OperatorConfig operatorConfig) {
+    }
+
+    @Override
+    public void run(OperatorContext operatorContext) {
+    }
+  }
+
+  /**
    * Returns the execution log of the given the node.
    *
    * @param node the last node in the DAG.
@@ -292,7 +312,7 @@ public class DAGExecutorBasicTest {
    * @return the final execution log of the DAG.
    */
   private static List<String> checkAndGetFinalResult(PhysicalNode<LogOperator> node) {
-    Reader<List<String>> reader = node.getOperator().output.getWriter().toReader();
+    Reader<List<String>> reader = node.getOperator().getOutputPort().getWriter().toReader();
     Assert.assertTrue(reader.hasNext());
     return reader.next();
   }

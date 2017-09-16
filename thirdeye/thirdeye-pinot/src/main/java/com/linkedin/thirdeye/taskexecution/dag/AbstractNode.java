@@ -19,8 +19,7 @@ public abstract class AbstractNode<N extends AbstractNode, E extends Edge> imple
   }
 
   protected AbstractNode(NodeIdentifier nodeIdentifier) {
-    Preconditions.checkNotNull(nodeIdentifier);
-    this.nodeIdentifier = nodeIdentifier;
+    setIdentifier(nodeIdentifier);
   }
 
   public NodeIdentifier getIdentifier() {
