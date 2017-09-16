@@ -7,7 +7,6 @@ import java.util.Map;
 
 public class OperatorContext {
   private NodeIdentifier nodeIdentifier;
-  private Map<NodeIdentifier, Reader> inputs = new HashMap<>();
 
   public OperatorContext() {
   }
@@ -22,17 +21,5 @@ public class OperatorContext {
 
   public void setNodeIdentifier(NodeIdentifier nodeIdentifier) {
     this.nodeIdentifier = nodeIdentifier;
-  }
-
-  public Map<NodeIdentifier, Reader> getInputs() {
-    return inputs;
-  }
-
-  public void addReader(NodeIdentifier identifier, Reader inputReader) {
-    inputs.put(identifier, inputReader);
-  }
-
-  public int size() {
-    return inputs.size();
   }
 }

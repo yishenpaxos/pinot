@@ -121,7 +121,7 @@ public class OperatorRunnerTest {
     Assert.assertNotNull(nodeIdentifier.getName());
   }
 
-  public static class DummyOperator extends Operator {
+  public static class DummyOperator implements Operator {
     @Override
     public void initialize(OperatorConfig operatorConfig) {
     }
@@ -131,7 +131,7 @@ public class OperatorRunnerTest {
     }
   }
 
-  public static class FailedRunOperator extends Operator {
+  public static class FailedRunOperator implements Operator {
     @Override
     public void initialize(OperatorConfig operatorConfig) {
     }

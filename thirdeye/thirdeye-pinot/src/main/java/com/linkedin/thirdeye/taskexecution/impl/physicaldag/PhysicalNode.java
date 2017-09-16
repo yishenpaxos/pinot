@@ -2,8 +2,6 @@ package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
 import com.linkedin.thirdeye.taskexecution.dag.AbstractNode;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
-import com.linkedin.thirdeye.taskexecution.impl.dataflow.InMemoryCollectionReader;
-import com.linkedin.thirdeye.taskexecution.impl.operator.OperatorRunner;
 import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,8 +14,6 @@ public class PhysicalNode<OP extends Operator> extends AbstractNode<PhysicalNode
 
   private OP operator;
   private NodeConfig nodeConfig = new NodeConfig();
-
-  private OperatorRunner runner;
 
   public PhysicalNode(String name, Class operatorClass) throws IllegalAccessException, InstantiationException {
     this(new NodeIdentifier(name), operatorClass);
@@ -62,20 +58,6 @@ public class PhysicalNode<OP extends Operator> extends AbstractNode<PhysicalNode
 
   @Override
   public ExecutionStatus getExecutionStatus() {
-    if (runner != null) {
-      return runner.getExecutionStatus();
-    } else {
-      new InMemoryCollectionReader<>();
-    }
-    return ExecutionStatus.SKIPPED;
-  }
-
-  @Override
-  public NodeIdentifier call() throws Exception {
-    runner = new OperatorRunner<>(nodeIdentifier, nodeConfig, operator);
-    runner.setIncomingEdge(incomingEdge);
-    runner.setOutgoingEdge(outgoingEdge);
-
-    return runner.call();
+    throw new UnsupportedOperationException();
   }
 }

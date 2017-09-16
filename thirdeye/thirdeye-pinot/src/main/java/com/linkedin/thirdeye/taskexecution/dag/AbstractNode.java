@@ -2,19 +2,18 @@ package com.linkedin.thirdeye.taskexecution.dag;
 
 import com.google.common.base.Preconditions;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.ExecutionStatus;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.Callable;
 
-public abstract class AbstractNode<N extends AbstractNode, E extends Edge> implements Node<N, E>, Callable<NodeIdentifier> {
+
+public abstract class AbstractNode<N extends AbstractNode, E extends Edge> implements Node<N, E> {
   protected NodeIdentifier nodeIdentifier = new NodeIdentifier();
 
   private Set<N> incomingNode = new HashSet<>();
   private Set<N> outgoingNode = new HashSet<>();
-  protected Set<E> incomingEdge = new HashSet<>();
-  protected Set<E> outgoingEdge = new HashSet<>();
+  private Set<E> incomingEdge = new HashSet<>();
+  private Set<E> outgoingEdge = new HashSet<>();
 
   protected AbstractNode() {
   }
@@ -43,11 +42,11 @@ public abstract class AbstractNode<N extends AbstractNode, E extends Edge> imple
     outgoingNode.add(node);
   }
 
-  public Collection<N> getIncomingNodes() {
+  public Set<N> getIncomingNodes() {
     return incomingNode;
   }
 
-  public Collection<N> getOutgoingNodes() {
+  public Set<N> getOutgoingNodes() {
     return outgoingNode;
   }
 
@@ -64,12 +63,12 @@ public abstract class AbstractNode<N extends AbstractNode, E extends Edge> imple
   }
 
   @Override
-  public Collection<E> getIncomingEdges() {
+  public Set<E> getIncomingEdges() {
     return incomingEdge;
   }
 
   @Override
-  public Collection<E> getOutgoingEdges() {
+  public Set<E> getOutgoingEdges() {
     return outgoingEdge;
   }
 

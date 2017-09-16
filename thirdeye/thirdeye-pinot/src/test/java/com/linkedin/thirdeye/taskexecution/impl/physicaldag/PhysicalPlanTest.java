@@ -74,7 +74,7 @@ public class PhysicalPlanTest {
     Assert.fail();
   }
 
-  public static class DummyOperator extends Operator {
+  public static class DummyOperator implements Operator {
     @Override
     public void initialize(OperatorConfig operatorConfig) {
     }

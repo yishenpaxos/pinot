@@ -35,7 +35,7 @@ public class DAGExecutorBasicTest {
     DAGConfig dagConfig = new DAGConfig();
     dagConfig.setStopAtFailure(true);
     dagExecutor.execute(dag, dagConfig);
-    List<String> executionLog = checkAndGetFinalResult(dagExecutor.getNode(start.getIdentifier()));
+    List<String> executionLog = checkAndGetFinalResult(dag.getNode(start.getIdentifier()));
     List<String> expectedLog = new ArrayList<String>() {{
       add("start");
     }};
@@ -57,9 +57,7 @@ public class DAGExecutorBasicTest {
     DAGExecutor<PhysicalNode, PhysicalEdge> dagExecutor = new DAGExecutor<>(threadPool);
     dagExecutor.execute(dag, new DAGConfig());
 
-    // TODO: Check dagExecutor's execution status
-
-    List<String> executionLog = checkAndGetFinalResult(dagExecutor.getNode(node3.getIdentifier()));
+    List<String> executionLog = checkAndGetFinalResult(dag.getNode(node3.getIdentifier()));
     List<String> expectedResult = new ArrayList<String>() {{
       add("1");
       add("2");
@@ -73,9 +71,9 @@ public class DAGExecutorBasicTest {
 
   /**
    * DAG:
-   *     start1 -> node12 -> leaf1
+   *     start1 -> node12 -> end1
    *
-   *     start2 -> node22 ---> node23 ----> leaf2
+   *     start2 -> node22 ---> node23 ----> end2
    *                     \             /
    *                      \-> node24 -/
    */
@@ -105,7 +103,7 @@ public class DAGExecutorBasicTest {
 
     // Check path 1
     {
-      List<String> executionLog = checkAndGetFinalResult(dagExecutor.getNode(end1.getIdentifier()));
+      List<String> executionLog = checkAndGetFinalResult(dag.getNode(end1.getIdentifier()));
       List<String> expectedResult = new ArrayList<String>() {{
         add("start1");
         add("node12");
@@ -117,7 +115,7 @@ public class DAGExecutorBasicTest {
     }
     // Check path 2
     {
-      List<String> executionLog = checkAndGetFinalResult(dagExecutor.getNode(end2.getIdentifier()));
+      List<String> executionLog = checkAndGetFinalResult(dag.getNode(end2.getIdentifier()));
       List<String> expectedResult1 = new ArrayList<String>() {{
         add("start2");
         add("node22");
@@ -181,7 +179,7 @@ public class DAGExecutorBasicTest {
     DAGExecutor<PhysicalNode, PhysicalEdge> dagExecutor = new DAGExecutor<>(threadPool);
     dagExecutor.execute(dag, new DAGConfig());
 
-    List<String> executionLog = checkAndGetFinalResult(dagExecutor.getNode(end.getIdentifier()));
+    List<String> executionLog = checkAndGetFinalResult(dag.getNode(end.getIdentifier()));
     List<String> expectedOrder1 = new ArrayList<String>() {{
       add("start");
       add("12");
@@ -234,7 +232,7 @@ public class DAGExecutorBasicTest {
     DAGExecutor<PhysicalNode, PhysicalEdge> dagExecutor = new DAGExecutor<>(threadPool);
     dagExecutor.execute(dag, dagConfig);
 
-    List<String> executionLog = checkAndGetFinalResult(dagExecutor.getNode(node3.getIdentifier()));
+    List<String> executionLog = checkAndGetFinalResult(dag.getNode(node3.getIdentifier()));
     List<String> expectedResult = new ArrayList<String>() {{
       add("3");
     }};

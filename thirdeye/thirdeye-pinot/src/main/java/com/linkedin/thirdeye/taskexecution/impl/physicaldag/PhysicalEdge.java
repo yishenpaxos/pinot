@@ -5,13 +5,10 @@ import com.linkedin.thirdeye.taskexecution.dag.Edge;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.InputPort;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
 import com.linkedin.thirdeye.taskexecution.dataflow.writer.OutputPort;
-import com.linkedin.thirdeye.taskexecution.operator.Operator;
 
 public class PhysicalEdge implements Edge {
   private PhysicalNode source;
   private PhysicalNode sink;
-  private Operator sourceOperator;
-  private Operator sinkOperator;
   private OutputPort sourcePort;
   private InputPort sinkPort;
 
@@ -30,17 +27,21 @@ public class PhysicalEdge implements Edge {
     Preconditions.checkArgument(sink.getOperator() == sinkPort.getOperator());
     this.source = source;
     this.sink = sink;
-    sourceOperator = source.getOperator();
-    sinkOperator = sink.getOperator();
     this.sourcePort = sourcePort;
     this.sinkPort = sinkPort;
 
     return this;
   }
 
+  /**
+   * This method is supposed to be invoked by the operator runner that runs the source operator.
+   */
   public void flush() {
   }
 
+  /**
+   * This method is supposed to be invoked by the operator runner that runs the sink operator.
+   */
   public void initRead() {
     if (sourcePort != null && sinkPort != null) {
       Reader reader = sourcePort.getWriter().toReader();
@@ -54,14 +55,6 @@ public class PhysicalEdge implements Edge {
 
   public PhysicalNode getSink() {
     return sink;
-  }
-
-  public Operator getSourceOperator() {
-    return sourceOperator;
-  }
-
-  public Operator getSinkOperator() {
-    return sinkOperator;
   }
 
   public OutputPort getSourcePort() {

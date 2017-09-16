@@ -3,6 +3,7 @@ package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 import com.linkedin.thirdeye.taskexecution.dag.DAG;
 import com.linkedin.thirdeye.taskexecution.dag.Node;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
+import com.linkedin.thirdeye.taskexecution.impl.operator.OperatorRunner;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,7 +26,7 @@ public class DAGExecutor<N extends PhysicalNode, E extends PhysicalEdge> {
 
   // TODO: Persistent the following status to a DB in case of executor unexpectedly dies
   private Set<NodeIdentifier> processedNodes = new HashSet<>();
-  private Map<NodeIdentifier, N> runningNodes = new HashMap<>();
+  private Map<NodeIdentifier, OperatorRunner> runningNodes = new HashMap<>();
 
 
   public DAGExecutor(ExecutorService executorService) {
@@ -75,8 +76,13 @@ public class DAGExecutor<N extends PhysicalNode, E extends PhysicalEdge> {
       node.setNodeConfig(nodeConfig);
 
       LOG.info("Submitting node -- {} -- for execution.", node.getIdentifier().toString());
-      executorCompletionService.submit(node);
-      runningNodes.put(node.getIdentifier(), node);
+
+      OperatorRunner runner = new OperatorRunner(node.getIdentifier(), nodeConfig, node.getOperator());
+      runner.setIncomingEdge(node.getIncomingEdges());
+      runner.setOutgoingEdge(node.getOutgoingEdges());
+      executorCompletionService.submit(runner);
+
+      runningNodes.put(node.getIdentifier(), runner);
     }
   }
 
@@ -91,9 +97,5 @@ public class DAGExecutor<N extends PhysicalNode, E extends PhysicalEdge> {
       }
     }
     return true;
-  }
-
-  public N getNode(NodeIdentifier nodeIdentifier) {
-    return runningNodes.get(nodeIdentifier);
   }
 }

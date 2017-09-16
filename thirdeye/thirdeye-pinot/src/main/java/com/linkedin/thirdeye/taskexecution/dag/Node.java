@@ -1,6 +1,6 @@
 package com.linkedin.thirdeye.taskexecution.dag;
 
-import java.util.Collection;
+import java.util.Set;
 
 public interface Node<T extends Node, E extends Edge> {
 
@@ -11,15 +11,15 @@ public interface Node<T extends Node, E extends Edge> {
 
   void addOutgoingNode(T node);
 
-  Collection<T> getIncomingNodes();
+  Set<T> getIncomingNodes();
 
-  Collection<T> getOutgoingNodes();
+  Set<T> getOutgoingNodes();
 
   void addIncomingEdge(E edge);
 
   void addOutgoingEdge(E edge);
 
-  Collection<E> getIncomingEdges();
+  Set<E> getIncomingEdges();
 
-  Collection<E> getOutgoingEdges();
+  Set<E> getOutgoingEdges();
 }
