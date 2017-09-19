@@ -6,7 +6,7 @@ import com.linkedin.thirdeye.taskexecution.operator.Operator;
 
 public class GenericOutputPort<T> implements OutputPort<T> {
   private Operator operator;
-  private Writer<T> writer = new InMemoryCollectionWriter<>();
+  private Writer<T> writer;
 
   public GenericOutputPort() {
   }
@@ -25,10 +25,10 @@ public class GenericOutputPort<T> implements OutputPort<T> {
     return operator;
   }
 
-//  public void setWriter(Writer<T> writer) {
-//    Preconditions.checkNotNull(writer);
-//    this.writer = writer;
-//  }
+  @Override
+  public void initialize() {
+    writer = new InMemoryCollectionWriter<>();
+  }
 
   @Override
   public Writer<T> getWriter() {

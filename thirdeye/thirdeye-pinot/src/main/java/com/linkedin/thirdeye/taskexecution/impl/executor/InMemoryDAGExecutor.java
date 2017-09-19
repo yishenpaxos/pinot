@@ -1,9 +1,13 @@
-package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
+package com.linkedin.thirdeye.taskexecution.impl.executor;
 
 import com.linkedin.thirdeye.taskexecution.dag.DAG;
 import com.linkedin.thirdeye.taskexecution.dag.Node;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.impl.operator.OperatorRunner;
+import com.linkedin.thirdeye.taskexecution.impl.physicaldag.DAGConfig;
+import com.linkedin.thirdeye.taskexecution.impl.physicaldag.ExecutionStatus;
+import com.linkedin.thirdeye.taskexecution.impl.physicaldag.NodeConfig;
+import com.linkedin.thirdeye.taskexecution.impl.physicaldag.PhysicalNode;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,8 +24,8 @@ import org.slf4j.LoggerFactory;
  * service. An executor takes care of only logical execution (control flow). The physical execution is done by
  * OperatorRunner, which could be executed on other machines.
  */
-public class DAGExecutor<N extends PhysicalNode, E extends PhysicalEdge> {
-  private static final Logger LOG = LoggerFactory.getLogger(DAGExecutor.class);
+public class InMemoryDAGExecutor {
+  private static final Logger LOG = LoggerFactory.getLogger(InMemoryDAGExecutor.class);
   private ExecutorCompletionService<NodeIdentifier> executorCompletionService;
 
   // TODO: Persistent the following status to a DB in case of executor unexpectedly dies
@@ -29,13 +33,13 @@ public class DAGExecutor<N extends PhysicalNode, E extends PhysicalEdge> {
   private Map<NodeIdentifier, OperatorRunner> runningNodes = new HashMap<>();
 
 
-  public DAGExecutor(ExecutorService executorService) {
+  public InMemoryDAGExecutor(ExecutorService executorService) {
     this.executorCompletionService = new ExecutorCompletionService<>(executorService);
   }
 
-  public void execute(DAG<N, E> dag, DAGConfig dagConfig) {
+  public <N extends PhysicalNode> void execute(DAG<N> dag, DAGConfig dagConfig) {
     Collection<N> nodes = dag.getRootNodes();
-    for (N node : nodes) {
+    for (PhysicalNode node : nodes) {
       processNode(node, dagConfig);
     }
     while (runningNodes.size() > processedNodes.size()) {
@@ -53,9 +57,9 @@ public class DAGExecutor<N extends PhysicalNode, E extends PhysicalEdge> {
         }
         processedNodes.add(nodeIdentifier);
         // Search for the next node to execute
-        N node = dag.getNode(nodeIdentifier);
-        for (Object outGoingNode : node.getOutgoingNodes()) {
-          processNode((N) outGoingNode, dagConfig);
+        PhysicalNode node = dag.getNode(nodeIdentifier);
+        for (PhysicalNode outGoingNode : node.getOutgoingNodes()) {
+          processNode(outGoingNode, dagConfig);
         }
       } catch (InterruptedException | ExecutionException e) {
         // The implementation of OperatorRunner needs to guarantee that this block never happens
@@ -70,7 +74,7 @@ public class DAGExecutor<N extends PhysicalNode, E extends PhysicalEdge> {
     // TODO: wait all runners are stopped and clean up intermediate data
   }
 
-  private void processNode(N node, DAGConfig dagConfig) {
+  private void processNode(PhysicalNode node, DAGConfig dagConfig) {
     if (!isProcessed(node) && parentsAreProcessed(node)) {
       NodeConfig nodeConfig = dagConfig.getNodeConfig(node.getIdentifier());
       node.setNodeConfig(nodeConfig);
@@ -90,9 +94,9 @@ public class DAGExecutor<N extends PhysicalNode, E extends PhysicalEdge> {
     return processedNodes.contains(node.getIdentifier());
   }
 
-  private boolean parentsAreProcessed(N node) {
-    for (Object pNode : node.getIncomingNodes()) {
-      if (!processedNodes.contains(((N) pNode).getIdentifier())) {
+  private boolean parentsAreProcessed(PhysicalNode node) {
+    for (PhysicalNode pNode : node.getIncomingNodes()) {
+      if (!processedNodes.contains(pNode.getIdentifier())) {
         return false;
       }
     }

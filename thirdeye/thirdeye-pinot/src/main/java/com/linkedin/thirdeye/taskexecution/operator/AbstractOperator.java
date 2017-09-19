@@ -22,4 +22,14 @@ public abstract class AbstractOperator implements Operator {
   final public NodeIdentifier getNodeIdentifier() {
     return nodeIdentifier;
   }
+
+  @Override
+  public void initialInputPorts() {
+
+  }
+
+  @Override
+  public void initialOutputPorts() {
+
+  }
 }

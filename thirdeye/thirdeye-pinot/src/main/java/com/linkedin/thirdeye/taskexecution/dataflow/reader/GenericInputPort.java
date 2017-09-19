@@ -26,6 +26,12 @@ public class GenericInputPort<T> implements InputPort<T> {
   }
 
   @Override
+  public void initialize() {
+    builder = null;
+    initializeBuilder();
+  }
+
+  @Override
   public void addContext(Reader<T> reader) {
     if (reader != null) {
       initializeBuilder();

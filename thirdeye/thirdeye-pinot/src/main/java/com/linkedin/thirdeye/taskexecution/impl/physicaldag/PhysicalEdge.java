@@ -2,40 +2,32 @@ package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
 import com.google.common.base.Preconditions;
 import com.linkedin.thirdeye.taskexecution.dag.Edge;
+import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.InputPort;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
 import com.linkedin.thirdeye.taskexecution.dataflow.writer.OutputPort;
-import com.linkedin.thirdeye.taskexecution.operator.Operator1x1;
 
 public class PhysicalEdge implements Edge {
-  private PhysicalNode source;
-  private PhysicalNode sink;
+  private NodeIdentifier sourceIdentifier;
+  private NodeIdentifier sinkIdentifier;
   private OutputPort sourcePort;
   private InputPort sinkPort;
+  // TODO: Add edge property
 
   public PhysicalEdge connect(PhysicalNode source, PhysicalNode sink) {
-    Preconditions.checkNotNull(source);
-    Preconditions.checkNotNull(sink);
-
-    this.source = source;
-    this.sink = sink;
+    Preconditions.checkNotNull(source.getIdentifier());
+    Preconditions.checkNotNull(sink.getIdentifier());
+    this.sourceIdentifier = source.getIdentifier();
+    this.sinkIdentifier = sink.getIdentifier();
 
     return this;
   }
 
-  public <T> PhysicalEdge connectPort(PhysicalNode<? extends Operator1x1<?, ? extends T>> source,
-      PhysicalNode<? extends Operator1x1<? super T, ?>> sink) {
-
-    return connectPort(source, source.getOperator().getOutputPort(), sink, sink.getOperator().getInputPort());
-  }
-
-  public <T> PhysicalEdge connectPort(PhysicalNode source, OutputPort<? extends T> sourcePort, PhysicalNode sink,
-      InputPort<? super T> sinkPort) {
-    Preconditions.checkArgument(source.getOperator() == sourcePort.getOperator());
-    Preconditions.checkArgument(sink.getOperator() == sinkPort.getOperator());
-
-    this.source = source;
-    this.sink = sink;
+  public <T> PhysicalEdge connect(OutputPort<? extends T> sourcePort, InputPort<? super T> sinkPort) {
+    Preconditions.checkNotNull(sourcePort.getOperator().getNodeIdentifier());
+    Preconditions.checkNotNull(sinkPort.getOperator().getNodeIdentifier());
+    this.sourceIdentifier = sourcePort.getOperator().getNodeIdentifier();
+    this.sinkIdentifier = sinkPort.getOperator().getNodeIdentifier();
     this.sourcePort = sourcePort;
     this.sinkPort = sinkPort;
 
@@ -58,12 +50,12 @@ public class PhysicalEdge implements Edge {
     }
   }
 
-  public PhysicalNode getSource() {
-    return source;
+  public NodeIdentifier getSourceIdentifier() {
+    return sourceIdentifier;
   }
 
-  public PhysicalNode getSink() {
-    return sink;
+  public NodeIdentifier getSinkIdentifier() {
+    return sinkIdentifier;
   }
 
   public OutputPort getSourcePort() {

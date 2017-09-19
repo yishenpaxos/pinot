@@ -7,8 +7,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 
-public class PhysicalDAG implements DAG<PhysicalNode, PhysicalEdge> {
+public class PhysicalDAG implements DAG<PhysicalNode> {
   private Map<NodeIdentifier, PhysicalNode> rootNodes = new HashMap<>();
   private Map<NodeIdentifier, PhysicalNode> leafNodes = new HashMap<>();
   private Map<NodeIdentifier, PhysicalNode> nodes = new HashMap<>();
@@ -21,28 +22,30 @@ public class PhysicalDAG implements DAG<PhysicalNode, PhysicalEdge> {
    *
    * @return the node that is just being added or the existing node that has the same {@link NodeIdentifier}.
    */
-  @Override
-  public PhysicalNode addNode(PhysicalNode node) {
-    Preconditions.checkNotNull(node, "Unable to add a node with null node identifier.");
+  PhysicalNode addNode(PhysicalNode node) {
+    Preconditions.checkNotNull(node, "Unable to add an null node.");
     return getOrAdd(node);
   }
 
-  @Override
-  public PhysicalEdge addEdge(PhysicalEdge edge) {
-    PhysicalNode source = getOrAdd(edge.getSource());
-    PhysicalNode sink = getOrAdd(edge.getSink());
+  PhysicalEdge addEdge(PhysicalEdge edge) {
+    PhysicalNode source = getNode(edge.getSourceIdentifier());
+    PhysicalNode sink = getNode(edge.getSinkIdentifier());
+    Preconditions.checkNotNull(source, "Source node '%s' doesn't exist in DAG.", edge.getSourceIdentifier());
+    Preconditions.checkNotNull(sink, "Sink node '%s' doesn't exist in DAG.", edge.getSinkIdentifier());
+    Preconditions.checkArgument(!Objects.equals(source, sink), "Source and sink node cannot be the same.");
 
-    if (!source.equals(sink)) {
-      source.addOutgoingNode(sink);
-      source.addOutgoingEdge(edge);
-      if (leafNodes.containsKey(source.getIdentifier())) {
-        leafNodes.remove(source.getIdentifier());
-      }
-      sink.addIncomingNode(source);
-      sink.addIncomingEdge(edge);
-      if (rootNodes.containsKey(sink.getIdentifier())) {
-        rootNodes.remove(sink.getIdentifier());
-      }
+    source.addOutgoingNode(sink);
+    // TODO: Only add edge if their ports are connected
+    source.addOutgoingEdge(edge);
+    if (leafNodes.containsKey(source.getIdentifier())) {
+      leafNodes.remove(source.getIdentifier());
+    }
+
+    sink.addIncomingNode(source);
+    // TODO: Only add edge if their ports are connected
+    sink.addIncomingEdge(edge);
+    if (rootNodes.containsKey(sink.getIdentifier())) {
+      rootNodes.remove(sink.getIdentifier());
     }
 
     return edge;

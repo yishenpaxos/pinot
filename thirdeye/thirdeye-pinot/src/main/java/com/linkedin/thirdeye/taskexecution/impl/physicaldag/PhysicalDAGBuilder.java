@@ -1,12 +1,9 @@
-package com.linkedin.thirdeye.taskexecution.impl.physicaldag.builder;
+package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
 import com.google.common.base.Preconditions;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.InputPort;
 import com.linkedin.thirdeye.taskexecution.dataflow.writer.OutputPort;
-import com.linkedin.thirdeye.taskexecution.impl.physicaldag.PhysicalDAG;
-import com.linkedin.thirdeye.taskexecution.impl.physicaldag.PhysicalEdge;
-import com.linkedin.thirdeye.taskexecution.impl.physicaldag.PhysicalNode;
 import com.linkedin.thirdeye.taskexecution.operator.AbstractOperator;
 import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import com.linkedin.thirdeye.taskexecution.operator.Operator0x1;
@@ -16,6 +13,7 @@ import com.linkedin.thirdeye.taskexecution.operator.OperatorUtils;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class PhysicalDAGBuilder {
@@ -55,9 +53,13 @@ public class PhysicalDAGBuilder {
   }
 
   public <T> Channel<T> addChannel(OutputPort<? extends T> sourcePort, InputPort<? super T> sinkPort) {
+    final NodeIdentifier sourceIdentity = sourcePort.getOperator().getNodeIdentifier();
+    final NodeIdentifier sinkIdentify = sinkPort.getOperator().getNodeIdentifier();
+    Preconditions.checkArgument(!Objects.equals(sourceIdentity, sinkIdentify), "Source and sink operator cannot be the same.");
+
     Channel.ChannelBuilder<T> builder = new Channel.ChannelBuilder<>();
-    builder.setSourcePort(sourcePort).setSourceIdentify(sourcePort.getOperator().getNodeIdentifier())
-        .setSinkPort(sinkPort).setSinkIdentity(sinkPort.getOperator().getNodeIdentifier());
+    builder.setSourcePort(sourcePort).setSourceIdentify(sourceIdentity)
+        .setSinkPort(sinkPort).setSinkIdentity(sinkIdentify);
     Channel<T> channel = builder.createChannel();
     if (channels.containsKey(channel)) {
       return channels.get(channel);
@@ -70,16 +72,16 @@ public class PhysicalDAGBuilder {
   public PhysicalDAG build() {
     PhysicalDAG dag = new PhysicalDAG();
     for (Map.Entry<NodeIdentifier, Operator> identifierOperatorPair : operators.entrySet()) {
-      dag.addNode(new PhysicalNode(identifierOperatorPair.getKey(), identifierOperatorPair.getValue()));
+      NodeIdentifier identifier = identifierOperatorPair.getKey();
+      Operator operator = identifierOperatorPair.getValue();
+      dag.addNode(new PhysicalNode(identifier, operator));
     }
     for (Channel channel : channels.values()) {
-      NodeIdentifier sourceIdentifier = channel.getSourceIdentify();
-      NodeIdentifier sinkIdentifier = channel.getSinkIdentity();
       OutputPort sourcePort = channel.getSourcePort();
       InputPort sinkPort = channel.getSinkPort();
 
       PhysicalEdge edge = new PhysicalEdge();
-      edge.connectPort(dag.getNode(sourceIdentifier), sourcePort, dag.getNode(sinkIdentifier), sinkPort);
+      edge.connect(sourcePort, sinkPort);
       dag.addEdge(edge);
     }
 

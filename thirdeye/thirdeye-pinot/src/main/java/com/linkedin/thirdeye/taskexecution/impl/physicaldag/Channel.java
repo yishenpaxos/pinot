@@ -1,4 +1,4 @@
-package com.linkedin.thirdeye.taskexecution.impl.physicaldag.builder;
+package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
 import com.google.common.base.Preconditions;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
@@ -7,10 +7,10 @@ import com.linkedin.thirdeye.taskexecution.dataflow.writer.OutputPort;
 import java.util.Objects;
 
 public class Channel<T> {
-  private OutputPort<? extends T> sourcePort;
-  private InputPort<? super T> sinkPort;
   private NodeIdentifier sourceIdentify;
   private NodeIdentifier sinkIdentity;
+  private OutputPort<? extends T> sourcePort;
+  private InputPort<? super T> sinkPort;
 
   Channel(OutputPort<? extends T> sourcePort, InputPort<? super T> sinkPort, NodeIdentifier sourceIdentify,
       NodeIdentifier sinkIdentity) {

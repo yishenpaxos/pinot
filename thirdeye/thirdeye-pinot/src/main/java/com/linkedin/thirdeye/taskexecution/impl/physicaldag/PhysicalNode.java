@@ -9,17 +9,17 @@ import org.slf4j.LoggerFactory;
 /**
  * A PhysicalNode that executes work using one partition.
  */
-public class PhysicalNode<OP extends Operator> extends AbstractNode<PhysicalNode, PhysicalEdge> {
+public class PhysicalNode extends AbstractNode<PhysicalNode, PhysicalEdge> {
   private static final Logger LOG = LoggerFactory.getLogger(PhysicalNode.class);
 
-  private OP operator;
+  private Operator operator;
   private NodeConfig nodeConfig = new NodeConfig();
 
-  public PhysicalNode(String name, OP operator) {
+  public PhysicalNode(String name, Operator operator) {
     this(new NodeIdentifier(name), operator);
   }
 
-  public PhysicalNode(NodeIdentifier nodeIdentifier, OP operator) {
+  public PhysicalNode(NodeIdentifier nodeIdentifier, Operator operator) {
     super(nodeIdentifier);
     this.operator = operator;
   }
@@ -32,7 +32,7 @@ public class PhysicalNode<OP extends Operator> extends AbstractNode<PhysicalNode
     this.nodeConfig = nodeConfig;
   }
 
-  public OP getOperator() {
+  public Operator getOperator() {
     return operator;
   }
 

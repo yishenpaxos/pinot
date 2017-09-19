@@ -9,4 +9,14 @@ public abstract class Operator0x1<OUT> extends AbstractOperator {
   public OutputPort<OUT> getOutputPort() {
     return outputPort;
   }
+
+  @Override
+  public void initialInputPorts() {
+
+  }
+
+  @Override
+  public void initialOutputPorts() {
+    outputPort.initialize();
+  }
 }

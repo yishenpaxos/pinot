@@ -9,7 +9,7 @@ import org.testng.annotations.Test;
 
 public class PhysicalDAGTest {
   private PhysicalDAG dag;
-  private PhysicalNode<DummyOperator> start;
+  private PhysicalNode start;
 
   @Test
   public void testCreation() {
@@ -23,7 +23,7 @@ public class PhysicalDAGTest {
   @Test(dependsOnMethods = {"testCreation"})
   public void testAddRoot() {
     dag = new PhysicalDAG();
-    start = new PhysicalNode<>("1", new DummyOperator());
+    start = new PhysicalNode("1", new DummyOperator());
     dag.addNode(start);
 
     Assert.assertEquals(dag.getRootNodes().size(), 1);
@@ -34,7 +34,7 @@ public class PhysicalDAGTest {
 
   @Test(dependsOnMethods = {"testCreation", "testAddRoot"})
   public void testAddDuplicatedNode() {
-    PhysicalNode node2 = new PhysicalNode<>("1", new DummyOperator());
+    PhysicalNode node2 = new PhysicalNode("1", new DummyOperator());
     PhysicalNode dagNode1 = dag.addNode(node2);
 
     Assert.assertEquals(dagNode1, start);
@@ -45,7 +45,7 @@ public class PhysicalDAGTest {
 
   @Test(dependsOnMethods = {"testCreation", "testAddRoot", "testAddDuplicatedNode"})
   public void testAddNodes() {
-    PhysicalNode node2 = new PhysicalNode<>("2", new DummyOperator());
+    PhysicalNode node2 = new PhysicalNode("2", new DummyOperator());
     dag.addNode(node2);
     dag.addEdge((new PhysicalEdge()).connect(start, node2));
     dag.addEdge((new PhysicalEdge()).connect(start, node2));
@@ -53,9 +53,8 @@ public class PhysicalDAGTest {
     Assert.assertEquals(dag.getAllNodes().size(), 2);
     Assert.assertEquals(dag.getLeafNodes().size(), 1);
 
-    PhysicalNode node3 = new PhysicalNode<>("3", new DummyOperator());
-    // The following line should be automatically executed in the addEdge method.
-    // dag.addNode(node3);
+    PhysicalNode node3 = new PhysicalNode("3", new DummyOperator());
+    dag.addNode(node3);
     dag.addEdge((new PhysicalEdge()).connect(start, node3));
     Assert.assertEquals(dag.getRootNodes().size(), 1);
     Assert.assertEquals(dag.getAllNodes().size(), 3);
@@ -66,7 +65,7 @@ public class PhysicalDAGTest {
   public void testAddNodeWithNullNodeIdentifier() {
     PhysicalDAG dag = new PhysicalDAG();
     try {
-      PhysicalNode node = new PhysicalNode<>("", new DummyOperator());
+      PhysicalNode node = new PhysicalNode("", new DummyOperator());
       node.setIdentifier(null);
       dag.addNode(node);
     } catch (NullPointerException e) {

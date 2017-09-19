@@ -2,12 +2,15 @@ package com.linkedin.thirdeye.taskexecution.impl.operator;
 
 import com.google.common.base.Preconditions;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
+import com.linkedin.thirdeye.taskexecution.dataflow.reader.InputPort;
+import com.linkedin.thirdeye.taskexecution.dataflow.writer.OutputPort;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.ExecutionStatus;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.NodeConfig;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.PhysicalEdge;
 import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
+import org.apache.commons.collections.CollectionUtils;
 
 /**
  * OperatorRunner is a wrapper class to setup input and gather the output data of a operator.
@@ -43,16 +46,22 @@ public class OperatorRunner extends AbstractOperatorRunner {
       int numRetry = nodeConfig.numRetryAtError();
       for (int i = 0; i <= numRetry; ++i) {
         try {
-          // TODO: Consider re-initialization after failures
+          // Initialize local input and output ports
+          operator.initialInputPorts();
+          operator.initialOutputPorts();
+
+          // Read context from remote output ports to local input ports
           for (PhysicalEdge edge : incomingEdge) {
             edge.initRead();
           }
 
+          // Initialize operator
           OperatorConfig operatorConfig = convertNodeConfigToOperatorConfig(nodeConfig);
           operator.initialize(operatorConfig);
+          // Run operator
           operator.run(new OperatorContext(nodeIdentifier));
 
-          // TODO: Consider re-initialization after failures
+          // Flush context in local output ports, which may write context to a remote DB.
           for (PhysicalEdge edge : outgoingEdge) {
             edge.flush();
           }

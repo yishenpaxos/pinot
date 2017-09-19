@@ -7,10 +7,10 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class PhysicalNodeTest {
-  private PhysicalNode<DummyOperator> node;
+  private PhysicalNode node;
   @Test
   public void testCreation() throws Exception {
-    node = new PhysicalNode<>("Test", new DummyOperator());
+    node = new PhysicalNode("Test", new DummyOperator());
   }
 
   @Test (enabled = false, dependsOnMethods = "testCreation")
