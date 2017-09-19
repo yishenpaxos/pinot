@@ -15,7 +15,6 @@ public class GenericOutputPort<T> implements OutputPort<T> {
     setOperator(operator);
   }
 
-  @Override
   public void setOperator(Operator operator) {
     Preconditions.checkNotNull(operator);
     this.operator = operator;
@@ -26,11 +25,10 @@ public class GenericOutputPort<T> implements OutputPort<T> {
     return operator;
   }
 
-  @Override
-  public void setWriter(Writer<T> writer) {
-    Preconditions.checkNotNull(writer);
-    this.writer = writer;
-  }
+//  public void setWriter(Writer<T> writer) {
+//    Preconditions.checkNotNull(writer);
+//    this.writer = writer;
+//  }
 
   @Override
   public Writer<T> getWriter() {

@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
-public class PhysicalPlan implements DAG<PhysicalNode, PhysicalEdge> {
+public class PhysicalDAG implements DAG<PhysicalNode, PhysicalEdge> {
   private Map<NodeIdentifier, PhysicalNode> rootNodes = new HashMap<>();
   private Map<NodeIdentifier, PhysicalNode> leafNodes = new HashMap<>();
   private Map<NodeIdentifier, PhysicalNode> nodes = new HashMap<>();

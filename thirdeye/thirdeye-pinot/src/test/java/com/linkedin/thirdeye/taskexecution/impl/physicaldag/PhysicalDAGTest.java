@@ -1,20 +1,21 @@
 package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
-import com.linkedin.thirdeye.taskexecution.operator.Operator;
+import com.linkedin.thirdeye.taskexecution.impl.physicalplan.PhysicalPlan;
+import com.linkedin.thirdeye.taskexecution.operator.AbstractOperator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 
-public class PhysicalPlanTest {
-  private PhysicalPlan dag;
+public class PhysicalDAGTest {
+  private PhysicalDAG dag;
   private PhysicalNode<DummyOperator> start;
 
   @Test
   public void testCreation() {
     try {
-      dag = new PhysicalPlan();
+      dag = new PhysicalDAG();
     } catch (Exception e) {
       Assert.fail();
     }
@@ -22,7 +23,7 @@ public class PhysicalPlanTest {
 
   @Test(dependsOnMethods = {"testCreation"})
   public void testAddRoot() {
-    dag = new PhysicalPlan();
+    dag = new PhysicalDAG();
     start = new PhysicalNode<>("1", new DummyOperator());
     dag.addNode(start);
 
@@ -64,7 +65,7 @@ public class PhysicalPlanTest {
 
   @Test
   public void testAddNodeWithNullNodeIdentifier() {
-    PhysicalPlan dag = new PhysicalPlan();
+    PhysicalDAG dag = new PhysicalDAG();
     try {
       PhysicalNode node = new PhysicalNode<>("", new DummyOperator());
       node.setIdentifier(null);
@@ -75,7 +76,7 @@ public class PhysicalPlanTest {
     Assert.fail();
   }
 
-  public static class DummyOperator implements Operator {
+  public static class DummyOperator extends AbstractOperator {
     @Override
     public void initialize(OperatorConfig operatorConfig) {
     }

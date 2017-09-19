@@ -1,6 +1,6 @@
 package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
-import com.linkedin.thirdeye.taskexecution.operator.Operator;
+import com.linkedin.thirdeye.taskexecution.operator.AbstractOperator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
 import org.testng.Assert;
@@ -18,7 +18,7 @@ public class PhysicalNodeTest {
     Assert.assertEquals(node.getExecutionStatus(), ExecutionStatus.SKIPPED);
   }
 
-  public static class DummyOperator implements Operator {
+  public static class DummyOperator extends AbstractOperator {
     @Override
     public void initialize(OperatorConfig operatorConfig) {
     }

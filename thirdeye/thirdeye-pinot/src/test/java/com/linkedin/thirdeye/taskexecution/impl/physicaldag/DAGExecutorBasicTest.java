@@ -27,7 +27,7 @@ public class DAGExecutorBasicTest {
    */
   @Test
   public void testOneNodeExecution() {
-    PhysicalPlan dag = new PhysicalPlan();
+    PhysicalDAG dag = new PhysicalDAG();
     PhysicalNode<LogOperator> start = new PhysicalNode<>("start", new LogOperator());
     dag.addNode(start);
 
@@ -47,7 +47,7 @@ public class DAGExecutorBasicTest {
    */
   @Test
   public void testOneNodeChainExecution() {
-    PhysicalPlan dag = new PhysicalPlan();
+    PhysicalDAG dag = new PhysicalDAG();
     PhysicalNode<LogOperator> node1 = new PhysicalNode<>("1", new LogOperator());
     PhysicalNode<LogOperator> node2 = new PhysicalNode<>("2", new LogOperator());
     PhysicalNode<LogOperator> node3 = new PhysicalNode<>("3", new LogOperator());
@@ -79,7 +79,7 @@ public class DAGExecutorBasicTest {
    */
   @Test
   public void testTwoNodeChainsExecution() {
-    PhysicalPlan dag = new PhysicalPlan();
+    PhysicalDAG dag = new PhysicalDAG();
     PhysicalNode<LogOperator> start1 = new PhysicalNode<>("start1", new LogOperator());
     PhysicalNode<LogOperator> node12 = new PhysicalNode<>("node12", new LogOperator());
     PhysicalNode<LogOperator> end1 = new PhysicalNode<>("end1", new LogOperator());
@@ -147,7 +147,7 @@ public class DAGExecutorBasicTest {
    */
   @Test
   public void testComplexGraphExecution() {
-    PhysicalPlan dag = new PhysicalPlan();
+    PhysicalDAG dag = new PhysicalDAG();
     PhysicalNode<LogOperator> start = new PhysicalNode<>("start", new LogOperator());
     PhysicalNode<LogOperator> end = new PhysicalNode<>("end", new LogOperator());
 
@@ -227,7 +227,7 @@ public class DAGExecutorBasicTest {
    */
   @Test
   public void testFailedChainExecution() {
-    PhysicalPlan dag = new PhysicalPlan();
+    PhysicalDAG dag = new PhysicalDAG();
     PhysicalNode<LogOperator> node1 = new PhysicalNode<>("1", new LogOperator());
     PhysicalNode<FailedOperator> node2 = new PhysicalNode<>("2", new FailedOperator());
     PhysicalNode<LogOperator> node3 = new PhysicalNode<>("3", new LogOperator());

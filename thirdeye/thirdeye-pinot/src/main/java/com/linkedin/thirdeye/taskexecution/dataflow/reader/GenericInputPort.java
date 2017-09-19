@@ -15,7 +15,6 @@ public class GenericInputPort<T> implements InputPort<T> {
     setOperator(operator);
   }
 
-  @Override
   public void setOperator(Operator operator) {
     Preconditions.checkNotNull(operator);
     this.operator = operator;
@@ -36,15 +35,15 @@ public class GenericInputPort<T> implements InputPort<T> {
     }
   }
 
-  private void initializeBuilder() {
-    if (builder == null) {
-      builder = InMemoryCollectionReader.builder();
-    }
-  }
-
   @Override
   public Reader<T> getReader() {
     initializeBuilder();
     return builder.build();
+  }
+
+  private void initializeBuilder() {
+    if (builder == null) {
+      builder = InMemoryCollectionReader.builder();
+    }
   }
 }

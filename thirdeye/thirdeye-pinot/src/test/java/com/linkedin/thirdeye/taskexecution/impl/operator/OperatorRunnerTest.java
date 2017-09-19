@@ -5,7 +5,7 @@ import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
 import com.linkedin.thirdeye.taskexecution.impl.dataflow.InMemoryCollectionReader;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.ExecutionStatus;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.NodeConfig;
-import com.linkedin.thirdeye.taskexecution.operator.Operator;
+import com.linkedin.thirdeye.taskexecution.operator.AbstractOperator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
 import java.util.HashMap;
@@ -121,7 +121,7 @@ public class OperatorRunnerTest {
     Assert.assertNotNull(nodeIdentifier.getName());
   }
 
-  public static class DummyOperator implements Operator {
+  public static class DummyOperator extends AbstractOperator {
     @Override
     public void initialize(OperatorConfig operatorConfig) {
     }
@@ -131,7 +131,7 @@ public class OperatorRunnerTest {
     }
   }
 
-  public static class FailedRunOperator implements Operator {
+  public static class FailedRunOperator extends AbstractOperator {
     @Override
     public void initialize(OperatorConfig operatorConfig) {
     }

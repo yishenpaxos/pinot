@@ -2,6 +2,7 @@ package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
 import com.linkedin.thirdeye.taskexecution.dag.AbstractNode;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
+import com.linkedin.thirdeye.taskexecution.impl.DAGUtils;
 import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,13 +16,12 @@ public class PhysicalNode<OP extends Operator> extends AbstractNode<PhysicalNode
   private OP operator;
   private NodeConfig nodeConfig = new NodeConfig();
 
-  public PhysicalNode(String name, Class operatorClass) throws IllegalAccessException, InstantiationException {
+  public PhysicalNode(String name, Class<OP> operatorClass) {
     this(new NodeIdentifier(name), operatorClass);
   }
 
-  public PhysicalNode(NodeIdentifier nodeIdentifier, Class operatorClass)
-      throws InstantiationException, IllegalAccessException {
-    this(nodeIdentifier, (OP) initiateOperatorInstance(operatorClass));
+  public PhysicalNode(NodeIdentifier nodeIdentifier, Class<OP> operatorClass) {
+    this(nodeIdentifier, DAGUtils.initiateOperatorInstance(operatorClass));
   }
 
   public PhysicalNode(String name, OP operator) {
@@ -31,17 +31,6 @@ public class PhysicalNode<OP extends Operator> extends AbstractNode<PhysicalNode
   public PhysicalNode(NodeIdentifier nodeIdentifier, OP operator) {
     super(nodeIdentifier);
     this.operator = operator;
-  }
-
-  private static Operator initiateOperatorInstance(Class operatorClass)
-      throws IllegalAccessException, InstantiationException {
-    try {
-      return (Operator) operatorClass.newInstance();
-    } catch (Exception e) {
-      // We cannot do anything if something bad happens here excepting rethrow the exception.
-      LOG.warn("Failed to initialize {}", operatorClass.getName());
-      throw e;
-    }
   }
 
   public NodeConfig getNodeConfig() {
