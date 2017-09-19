@@ -1,6 +1,5 @@
 package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
-import com.linkedin.thirdeye.taskexecution.impl.physicalplan.PhysicalPlan;
 import com.linkedin.thirdeye.taskexecution.operator.AbstractOperator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;

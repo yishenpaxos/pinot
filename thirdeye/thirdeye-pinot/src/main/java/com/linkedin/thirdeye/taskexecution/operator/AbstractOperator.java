@@ -13,8 +13,13 @@ public abstract class AbstractOperator implements Operator {
     setNodeIdentifier(nodeIdentifier);
   }
 
-  final public void setNodeIdentifier(NodeIdentifier nodeIdentifier) {
+  final void setNodeIdentifier(NodeIdentifier nodeIdentifier) {
     Preconditions.checkNotNull(nodeIdentifier);
     this.nodeIdentifier = nodeIdentifier;
+  }
+
+  @Override
+  final public NodeIdentifier getNodeIdentifier() {
+    return nodeIdentifier;
   }
 }

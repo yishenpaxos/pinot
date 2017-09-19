@@ -4,7 +4,9 @@ import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 
 public interface Operator {
 
-  void setNodeIdentifier(NodeIdentifier nodeIdentifier);
+//  void setNodeIdentifier(NodeIdentifier nodeIdentifier);
+
+  NodeIdentifier getNodeIdentifier();
 
   void initialize(OperatorConfig operatorConfig);
 

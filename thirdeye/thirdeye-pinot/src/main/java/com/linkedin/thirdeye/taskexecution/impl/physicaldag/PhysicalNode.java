@@ -2,7 +2,6 @@ package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
 import com.linkedin.thirdeye.taskexecution.dag.AbstractNode;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
-import com.linkedin.thirdeye.taskexecution.impl.DAGUtils;
 import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,14 +14,6 @@ public class PhysicalNode<OP extends Operator> extends AbstractNode<PhysicalNode
 
   private OP operator;
   private NodeConfig nodeConfig = new NodeConfig();
-
-  public PhysicalNode(String name, Class<OP> operatorClass) {
-    this(new NodeIdentifier(name), operatorClass);
-  }
-
-  public PhysicalNode(NodeIdentifier nodeIdentifier, Class<OP> operatorClass) {
-    this(nodeIdentifier, DAGUtils.initiateOperatorInstance(operatorClass));
-  }
 
   public PhysicalNode(String name, OP operator) {
     this(new NodeIdentifier(name), operator);
