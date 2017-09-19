@@ -2,35 +2,20 @@ package com.linkedin.thirdeye.taskexecution.impl.operator;
 
 import com.google.common.base.Preconditions;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
-import com.linkedin.thirdeye.taskexecution.dataflow.reader.InputPort;
-import com.linkedin.thirdeye.taskexecution.dataflow.writer.OutputPort;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.ExecutionStatus;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.NodeConfig;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.PhysicalEdge;
 import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
-import org.apache.commons.collections.CollectionUtils;
 
 /**
  * OperatorRunner is a wrapper class to setup input and gather the output data of a operator.
  */
 public class OperatorRunner extends AbstractOperatorRunner {
 
-  public OperatorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Operator operator) {
-    super(ensureNonNullNodeIdentifier(nodeIdentifier), nodeConfig, operator);
-  }
-
-  private static NodeIdentifier ensureNonNullNodeIdentifier(NodeIdentifier nodeIdentifier) {
-    if (nodeIdentifier == null) {
-      nodeIdentifier = new NodeIdentifier("Null Identifier");
-    }
-    return nodeIdentifier;
-  }
-
-  @Override
-  public ExecutionStatus getExecutionStatus() {
-    return executionStatus;
+  public OperatorRunner(NodeConfig nodeConfig, Operator operator) {
+    super(nodeConfig, operator);
   }
 
   /**

@@ -8,6 +8,10 @@ import org.slf4j.LoggerFactory;
 public class OperatorUtils {
   private static final Logger LOG = LoggerFactory.getLogger(OperatorUtils.class);
 
+  private OperatorUtils() {
+
+  }
+
   public static <T extends AbstractOperator> T initiateOperatorInstance(NodeIdentifier nodeIdentifier,
       Class<T> operatorClass) {
     Preconditions.checkNotNull(nodeIdentifier);

@@ -81,7 +81,7 @@ public class InMemoryDAGExecutor {
 
       LOG.info("Submitting node -- {} -- for execution.", node.getIdentifier().toString());
 
-      OperatorRunner runner = new OperatorRunner(node.getIdentifier(), nodeConfig, node.getOperator());
+      OperatorRunner runner = new OperatorRunner(nodeConfig, node.getOperator());
       runner.setIncomingEdge(node.getIncomingEdges());
       runner.setOutgoingEdge(node.getOutgoingEdges());
       executorCompletionService.submit(runner);

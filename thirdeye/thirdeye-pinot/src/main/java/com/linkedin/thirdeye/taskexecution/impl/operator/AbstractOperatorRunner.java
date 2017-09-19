@@ -23,12 +23,11 @@ public abstract class AbstractOperatorRunner implements Callable<NodeIdentifier>
   Set<PhysicalEdge> incomingEdge = Collections.emptySet();
   Set<PhysicalEdge> outgoingEdge = Collections.emptySet();
 
-  public AbstractOperatorRunner(NodeIdentifier nodeIdentifier, NodeConfig nodeConfig, Operator operator) {
-    Preconditions.checkNotNull(nodeIdentifier);
+  public AbstractOperatorRunner(NodeConfig nodeConfig, Operator operator) {
     Preconditions.checkNotNull(nodeConfig);
-    Preconditions.checkNotNull(operator);
+    Preconditions.checkNotNull(operator.getNodeIdentifier());
 
-    this.nodeIdentifier = nodeIdentifier;
+    this.nodeIdentifier = operator.getNodeIdentifier();
     this.nodeConfig = nodeConfig;
     this.operator = operator;
   }

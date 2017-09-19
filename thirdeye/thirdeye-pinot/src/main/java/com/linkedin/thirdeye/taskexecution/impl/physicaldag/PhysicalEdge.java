@@ -19,6 +19,8 @@ public class PhysicalEdge implements Edge {
     Preconditions.checkNotNull(sink.getIdentifier());
     this.sourceIdentifier = source.getIdentifier();
     this.sinkIdentifier = sink.getIdentifier();
+    this.sourcePort = null;
+    this.sinkPort = null;
 
     return this;
   }

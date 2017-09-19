@@ -3,6 +3,7 @@ package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
 import com.linkedin.thirdeye.taskexecution.impl.executor.InMemoryDAGExecutor;
+import com.linkedin.thirdeye.taskexecution.operator.Operator2x1;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
 import com.linkedin.thirdeye.taskexecution.operator.Operator1x1;
@@ -156,12 +157,6 @@ public class InMemoryDAGExecutorTest {
     LogOperator start = dagBuilder.addOperator(new NodeIdentifier("start"), LogOperator.class);
     LogOperator end = dagBuilder.addOperator(new NodeIdentifier("end"), LogOperator.class);
 
-    // sub-path 3
-    // The following addChannels() should NOT compile because of static type checking
-    IntLogOperator node32 = dagBuilder.addOperator(new NodeIdentifier("32"), IntLogOperator.class);
-//    dagBuilder.addChannel(start, node32);
-//    dagBuilder.addChannel(start.getOutputPort(), node32.getInputPort());
-
     // sub-path 2
     LogOperator node22 = dagBuilder.addOperator(new NodeIdentifier("22"), LogOperator.class);
     LogOperator node23 = dagBuilder.addOperator(new NodeIdentifier("23"), LogOperator.class);
@@ -253,6 +248,34 @@ public class InMemoryDAGExecutorTest {
     Assert.assertTrue(checkLinearizability(executionLog, expectedResults));
   }
 
+  @Test
+  public void testStaticTypeChecking() {
+    PhysicalDAGBuilder dagBuilder = new PhysicalDAGBuilder();
+    LogOperator stringStringNode = dagBuilder.addOperator(new NodeIdentifier("start"), LogOperator.class);
+
+    // The following addChannels() should NOT compile because of static type checking
+    IntLogOperator intIntNode = dagBuilder.addOperator(new NodeIdentifier("32"), IntLogOperator.class);
+//    dagBuilder.addChannel(stringStringNode, intIntNode);
+//    dagBuilder.addChannel(stringStringNode.getOutputPort(), intIntNode.getInputPort());
+
+    IntStringLogOperator intStringNumberNode = dagBuilder.addOperator(new NodeIdentifier("intString"), IntStringLogOperator.class);
+    dagBuilder.addChannels(intIntNode, stringStringNode, intStringNumberNode);
+
+    PhysicalDAG dag = dagBuilder.build();
+    DAGConfig dagConfig = new DAGConfig();
+    dagConfig.setStopAtFailure(false);
+    InMemoryDAGExecutor dagExecutor = new InMemoryDAGExecutor(threadPool);
+    dagExecutor.execute(dag, dagConfig);
+  }
+
+  @Test
+  public void testDuplicatedNode() {
+    PhysicalDAGBuilder dagBuilder = new PhysicalDAGBuilder();
+    LogOperator stringStringNode1 = dagBuilder.addOperator(new NodeIdentifier("start"), LogOperator.class);
+    LogOperator stringStringNode2 = dagBuilder.addOperator(new NodeIdentifier("start"), LogOperator.class);
+    Assert.assertEquals(stringStringNode1, stringStringNode2);
+  }
+
   /**
    * An operator that appends node name to a list, which is passed in from its incoming nodes.
    */
@@ -307,6 +330,17 @@ public class InMemoryDAGExecutorTest {
     public void run(OperatorContext operatorContext) {
     }
   }
+
+  public static class IntStringLogOperator extends Operator2x1<Integer, List<String>, Number> {
+    @Override
+    public void initialize(OperatorConfig operatorConfig) {
+    }
+
+    @Override
+    public void run(OperatorContext operatorContext) {
+    }
+  }
+
 
   /**
    * Returns the execution log of the given the node.
