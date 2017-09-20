@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.ExecutionStatus;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.NodeConfig;
-import com.linkedin.thirdeye.taskexecution.impl.physicaldag.PhysicalEdge;
 import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
 import java.util.Collections;
@@ -20,8 +19,8 @@ public abstract class AbstractOperatorRunner implements Callable<NodeIdentifier>
   protected Operator operator;
   protected NodeConfig nodeConfig = new NodeConfig();
   protected ExecutionStatus executionStatus = ExecutionStatus.RUNNING;
-  Set<PhysicalEdge> incomingEdge = Collections.emptySet();
-  Set<PhysicalEdge> outgoingEdge = Collections.emptySet();
+  Set<OperatorIOChannel> incomingChannels = Collections.emptySet();
+  Set<OperatorIOChannel> outgoingChannels = Collections.emptySet();
 
   public AbstractOperatorRunner(NodeConfig nodeConfig, Operator operator) {
     Preconditions.checkNotNull(nodeConfig);
@@ -32,14 +31,14 @@ public abstract class AbstractOperatorRunner implements Callable<NodeIdentifier>
     this.operator = operator;
   }
 
-  public void setIncomingEdge(Set<PhysicalEdge> incomingEdge) {
-    Preconditions.checkNotNull(incomingEdge);
-    this.incomingEdge = incomingEdge;
+  public void setIncomingChannels(Set<OperatorIOChannel> incomingChannels) {
+    Preconditions.checkNotNull(incomingChannels);
+    this.incomingChannels = incomingChannels;
   }
 
-  public void setOutgoingEdge(Set<PhysicalEdge> outgoingEdge) {
-    Preconditions.checkNotNull(outgoingEdge);
-    this.outgoingEdge = outgoingEdge;
+  public void setOutgoingChannels(Set<OperatorIOChannel> outgoingChannels) {
+    Preconditions.checkNotNull(outgoingChannels);
+    this.outgoingChannels = outgoingChannels;
   }
 
   public ExecutionStatus getExecutionStatus() {

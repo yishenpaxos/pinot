@@ -4,7 +4,6 @@ import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.ExecutionStatus;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.NodeConfig;
-import com.linkedin.thirdeye.taskexecution.impl.physicaldag.PhysicalEdge;
 import com.linkedin.thirdeye.taskexecution.operator.AbstractOperator;
 import com.linkedin.thirdeye.taskexecution.operator.Operator1x1;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
@@ -52,10 +51,10 @@ public class OperatorRunnerTest {
     OperatorRunner runner1 = new OperatorRunner(nodeConfig, operator1);
     OperatorRunner runner2 = new OperatorRunner(nodeConfig, operator2);
 
-    PhysicalEdge edge = new PhysicalEdge();
-    edge.connect(operator1.getOutputPort(), operator2.getInputPort());
-    runner1.setOutgoingEdge(Collections.singleton(edge));
-    runner2.setIncomingEdge(Collections.singleton(edge));
+    OperatorIOChannel channel = new OperatorIOChannel();
+    channel.connect(operator1.getOutputPort(), operator2.getInputPort());
+    runner1.setOutgoingChannels(Collections.singleton(channel));
+    runner2.setIncomingChannels(Collections.singleton(channel));
 
     runner1.call();
     Assert.assertEquals(runner1.getExecutionStatus(), ExecutionStatus.SUCCESS);

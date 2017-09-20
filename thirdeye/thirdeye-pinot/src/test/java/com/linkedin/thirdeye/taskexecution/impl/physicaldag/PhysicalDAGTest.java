@@ -47,15 +47,15 @@ public class PhysicalDAGTest {
   public void testAddNodes() {
     PhysicalNode node2 = new PhysicalNode("2", new DummyOperator());
     dag.addNode(node2);
-    dag.addEdge((new PhysicalEdge()).connect(start, node2));
-    dag.addEdge((new PhysicalEdge()).connect(start, node2));
+    dag.addNodeDependency(start, node2);
+    dag.addNodeDependency(start, node2);
     Assert.assertEquals(dag.getRootNodes().size(), 1);
     Assert.assertEquals(dag.getAllNodes().size(), 2);
     Assert.assertEquals(dag.getLeafNodes().size(), 1);
 
     PhysicalNode node3 = new PhysicalNode("3", new DummyOperator());
     dag.addNode(node3);
-    dag.addEdge((new PhysicalEdge()).connect(start, node3));
+    dag.addNodeDependency(start, node3);
     Assert.assertEquals(dag.getRootNodes().size(), 1);
     Assert.assertEquals(dag.getAllNodes().size(), 3);
     Assert.assertEquals(dag.getLeafNodes().size(), 2);

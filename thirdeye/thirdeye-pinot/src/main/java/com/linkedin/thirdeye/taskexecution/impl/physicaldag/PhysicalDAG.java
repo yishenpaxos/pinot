@@ -27,7 +27,23 @@ public class PhysicalDAG implements DAG<PhysicalNode> {
     return getOrAdd(node);
   }
 
-  PhysicalEdge addEdge(PhysicalEdge edge) {
+  void addNodeDependency(PhysicalNode source, PhysicalNode sink) {
+    Preconditions.checkNotNull(source);
+    Preconditions.checkNotNull(sink);
+
+    source = getOrAdd(source);
+    sink = getOrAdd(sink);
+    source.addOutgoingNode(sink);
+    if (leafNodes.containsKey(source.getIdentifier())) {
+      leafNodes.remove(source.getIdentifier());
+    }
+    sink.addIncomingNode(source);
+    if (rootNodes.containsKey(sink.getIdentifier())) {
+      rootNodes.remove(sink.getIdentifier());
+    }
+  }
+
+  void addChannel(Channel edge) {
     PhysicalNode source = getNode(edge.getSourceIdentifier());
     PhysicalNode sink = getNode(edge.getSinkIdentifier());
     Preconditions.checkNotNull(source, "Source node '%s' doesn't exist in DAG.", edge.getSourceIdentifier());
@@ -35,20 +51,16 @@ public class PhysicalDAG implements DAG<PhysicalNode> {
     Preconditions.checkArgument(!Objects.equals(source, sink), "Source and sink node cannot be the same.");
 
     source.addOutgoingNode(sink);
-    // TODO: Only add edge if their ports are connected
     source.addOutgoingEdge(edge);
     if (leafNodes.containsKey(source.getIdentifier())) {
       leafNodes.remove(source.getIdentifier());
     }
 
     sink.addIncomingNode(source);
-    // TODO: Only add edge if their ports are connected
     sink.addIncomingEdge(edge);
     if (rootNodes.containsKey(sink.getIdentifier())) {
-      rootNodes.remove(sink.getIdentifier());
+        rootNodes.remove(sink.getIdentifier());
     }
-
-    return edge;
   }
 
   @Override

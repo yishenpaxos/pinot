@@ -76,12 +76,7 @@ public class PhysicalDAGBuilder {
       dag.addNode(new PhysicalNode(identifier, operator));
     }
     for (Channel channel : channels.values()) {
-      OutputPort sourcePort = channel.getSourcePort();
-      InputPort sinkPort = channel.getSinkPort();
-
-      PhysicalEdge edge = new PhysicalEdge();
-      edge.connect(sourcePort, sinkPort);
-      dag.addEdge(edge);
+      dag.addChannel(channel);
     }
 
     initBuild();

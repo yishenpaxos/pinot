@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 /**
  * A PhysicalNode that executes work using one partition.
  */
-public class PhysicalNode extends AbstractNode<PhysicalNode, PhysicalEdge> {
+public class PhysicalNode extends AbstractNode<PhysicalNode, Channel> {
   private static final Logger LOG = LoggerFactory.getLogger(PhysicalNode.class);
 
   private Operator operator;

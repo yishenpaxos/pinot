@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.ExecutionStatus;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.NodeConfig;
-import com.linkedin.thirdeye.taskexecution.impl.physicaldag.PhysicalEdge;
 import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
@@ -36,8 +35,8 @@ public class OperatorRunner extends AbstractOperatorRunner {
           operator.initialOutputPorts();
 
           // Read context from remote output ports to local input ports
-          for (PhysicalEdge edge : incomingEdge) {
-            edge.initRead();
+          for (OperatorIOChannel edge : incomingChannels) {
+            edge.initInputPort();
           }
 
           // Initialize operator
@@ -47,8 +46,8 @@ public class OperatorRunner extends AbstractOperatorRunner {
           operator.run(new OperatorContext(nodeIdentifier));
 
           // Flush context in local output ports, which may write context to a remote DB.
-          for (PhysicalEdge edge : outgoingEdge) {
-            edge.flush();
+          for (OperatorIOChannel edge : outgoingChannels) {
+            edge.flushOutputPort();
           }
         } catch (Exception e) {
           if (i == numRetry) {

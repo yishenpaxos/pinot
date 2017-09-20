@@ -1,12 +1,13 @@
 package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
 import com.google.common.base.Preconditions;
+import com.linkedin.thirdeye.taskexecution.dag.Edge;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.InputPort;
 import com.linkedin.thirdeye.taskexecution.dataflow.writer.OutputPort;
 import java.util.Objects;
 
-public class Channel<T> {
+public class Channel<T> implements Edge {
   private NodeIdentifier sourceIdentify;
   private NodeIdentifier sinkIdentity;
   private OutputPort<? extends T> sourcePort;
@@ -28,11 +29,11 @@ public class Channel<T> {
     return sinkPort;
   }
 
-  public NodeIdentifier getSourceIdentify() {
+  public NodeIdentifier getSourceIdentifier() {
     return sourceIdentify;
   }
 
-  public NodeIdentifier getSinkIdentity() {
+  public NodeIdentifier getSinkIdentifier() {
     return sinkIdentity;
   }
 
@@ -47,13 +48,13 @@ public class Channel<T> {
     Channel<?> channel = (Channel<?>) o;
     return Objects.equals(getSourcePort(), channel.getSourcePort()) && Objects
         .equals(getSinkPort(), channel.getSinkPort()) && Objects
-        .equals(getSourceIdentify(), channel.getSourceIdentify()) && Objects
-        .equals(getSinkIdentity(), channel.getSinkIdentity());
+        .equals(getSourceIdentifier(), channel.getSourceIdentifier()) && Objects
+        .equals(getSinkIdentifier(), channel.getSinkIdentifier());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getSourcePort(), getSinkPort(), getSourceIdentify(), getSinkIdentity());
+    return Objects.hash(getSourcePort(), getSinkPort(), getSourceIdentifier(), getSinkIdentifier());
   }
 
   public static class ChannelBuilder<T> {

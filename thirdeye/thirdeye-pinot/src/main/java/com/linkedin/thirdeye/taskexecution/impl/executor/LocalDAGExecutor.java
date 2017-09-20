@@ -4,9 +4,11 @@ import com.linkedin.thirdeye.taskexecution.dag.DAG;
 import com.linkedin.thirdeye.taskexecution.dag.Node;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.impl.operator.OperatorRunner;
+import com.linkedin.thirdeye.taskexecution.impl.physicaldag.Channel;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.DAGConfig;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.ExecutionStatus;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.NodeConfig;
+import com.linkedin.thirdeye.taskexecution.impl.operator.OperatorIOChannel;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.PhysicalNode;
 import java.util.Collection;
 import java.util.HashMap;
@@ -81,9 +83,30 @@ public class LocalDAGExecutor {
 
       LOG.info("Submitting node -- {} -- for execution.", node.getIdentifier().toString());
 
+      // Set up incoming channels for the runner
       OperatorRunner runner = new OperatorRunner(nodeConfig, node.getOperator());
-      runner.setIncomingEdge(node.getIncomingEdges());
-      runner.setOutgoingEdge(node.getOutgoingEdges());
+      Set<OperatorIOChannel> incomingChannels = new HashSet<>();
+      for (Channel edge : node.getIncomingEdges()) {
+        if (edge.getSourcePort() != null && edge.getSinkPort() != null) {
+          OperatorIOChannel operatorIOChannel = new OperatorIOChannel();
+          operatorIOChannel.connect(edge.getSourcePort(), edge.getSinkPort());
+          incomingChannels.add(operatorIOChannel);
+        }
+      }
+      runner.setIncomingChannels(incomingChannels);
+
+      // Set up outgoing channels for the runner
+      Set<OperatorIOChannel> outgoingChannels = new HashSet<>();
+      for (Channel edge : node.getOutgoingEdges()) {
+        if (edge.getSourcePort() != null && edge.getSinkPort() != null) {
+          OperatorIOChannel operatorIOChannel = new OperatorIOChannel();
+          operatorIOChannel.connect(edge.getSourcePort(), edge.getSinkPort());
+          outgoingChannels.add(operatorIOChannel);
+        }
+      }
+      runner.setOutgoingChannels(outgoingChannels);
+
+      // Submit runner
       executorCompletionService.submit(runner);
 
       runningNodes.put(node.getIdentifier(), runner);
