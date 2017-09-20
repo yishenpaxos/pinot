@@ -1,8 +1,10 @@
-package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
+package com.linkedin.thirdeye.taskexecution.impl.executor;
 
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
-import com.linkedin.thirdeye.taskexecution.impl.executor.LocalDAGExecutor;
+import com.linkedin.thirdeye.taskexecution.impl.physicaldag.DAGConfig;
+import com.linkedin.thirdeye.taskexecution.impl.physicaldag.PhysicalDAG;
+import com.linkedin.thirdeye.taskexecution.impl.physicaldag.PhysicalDAGBuilder;
 import com.linkedin.thirdeye.taskexecution.operator.Operator2x1;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
@@ -21,8 +23,8 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 
-public class LocalDAGExecutorTest {
-  private static final Logger LOG = LoggerFactory.getLogger(LocalDAGExecutorTest.class);
+public class DAGExecutorTest {
+  private static final Logger LOG = LoggerFactory.getLogger(DAGExecutorTest.class);
   private ExecutorService threadPool = Executors.newFixedThreadPool(10);
 
   /**
@@ -35,7 +37,7 @@ public class LocalDAGExecutorTest {
 
     PhysicalDAG dag = dagBuilder.build();
 
-    LocalDAGExecutor dagExecutor = new LocalDAGExecutor(threadPool);
+    DAGExecutor dagExecutor = new DAGExecutor(threadPool);
     DAGConfig dagConfig = new DAGConfig();
     dagConfig.setStopAtFailure(true);
     dagExecutor.execute(dag, dagConfig);
@@ -59,7 +61,7 @@ public class LocalDAGExecutorTest {
     dagBuilder.addChannel(node2.getOutputPort(), node3.getInputPort());
 
     PhysicalDAG physicalDAG = dagBuilder.build();
-    LocalDAGExecutor dagExecutor = new LocalDAGExecutor(threadPool);
+    DAGExecutor dagExecutor = new DAGExecutor(threadPool);
     dagExecutor.execute(physicalDAG, new DAGConfig());
 
     List<String> executionLog = checkAndGetFinalResult(node3);
@@ -104,7 +106,7 @@ public class LocalDAGExecutorTest {
 
     PhysicalDAG dag = dagBuilder.build();
 
-    LocalDAGExecutor dagExecutor = new LocalDAGExecutor(threadPool);
+    DAGExecutor dagExecutor = new DAGExecutor(threadPool);
     dagExecutor.execute(dag, new DAGConfig());
 
     // Check path 1
@@ -181,7 +183,7 @@ public class LocalDAGExecutorTest {
     dagBuilder.addChannel(node12, end);
 
     PhysicalDAG dag = dagBuilder.build();
-    LocalDAGExecutor dagExecutor = new LocalDAGExecutor(threadPool);
+    DAGExecutor dagExecutor = new DAGExecutor(threadPool);
     dagExecutor.execute(dag, new DAGConfig());
 
     List<String> executionLog = checkAndGetFinalResult(end);
@@ -235,7 +237,7 @@ public class LocalDAGExecutorTest {
     PhysicalDAG dag = dagBuilder.build();
     DAGConfig dagConfig = new DAGConfig();
     dagConfig.setStopAtFailure(false);
-    LocalDAGExecutor dagExecutor = new LocalDAGExecutor(threadPool);
+    DAGExecutor dagExecutor = new DAGExecutor(threadPool);
     dagExecutor.execute(dag, dagConfig);
 
     List<String> executionLog = checkAndGetFinalResult(node3);
@@ -265,7 +267,7 @@ public class LocalDAGExecutorTest {
     PhysicalDAG dag = dagBuilder.build();
     DAGConfig dagConfig = new DAGConfig();
     dagConfig.setStopAtFailure(true);
-    LocalDAGExecutor dagExecutor = new LocalDAGExecutor(threadPool);
+    DAGExecutor dagExecutor = new DAGExecutor(threadPool);
     dagExecutor.execute(dag, dagConfig);
   }
 

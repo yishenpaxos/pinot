@@ -1,16 +1,35 @@
 package com.linkedin.thirdeye.taskexecution.dag;
 
 import java.util.Collection;
+import java.util.Set;
 
-public interface DAG<N extends Node> {
+public interface DAG<N extends Node<N, E>, E extends Edge> {
   /**
    * Returns the node with the given {@link NodeIdentifier}.
    *
    * @param nodeIdentifier the node identifier.
    *
-   * @return the node with the given {@link NodeIdentifier}.
+   * @return null if no such node exists.
    */
   N getNode(NodeIdentifier nodeIdentifier);
+
+  /**
+   * Returns the parents of the specified node.
+   *
+   * @param nodeIdentifier the identifier of the specified node.
+   *
+   * @return an empty set if the specified node does not exist.
+   */
+  Set<N> getParents(NodeIdentifier nodeIdentifier);
+
+  /**
+   * Returns the children of the specified node.
+   *
+   * @param nodeIdentifier the identifier of the specified node.
+   *
+   * @return an empty set if the specified node does not exist.
+   */
+  Set<N> getChildren(NodeIdentifier nodeIdentifier);
 
   /**
    * Returns the number of nodes in the DAG.
@@ -24,14 +43,14 @@ public interface DAG<N extends Node> {
    *
    * @return all nodes that do not have incoming edges.
    */
-  Collection<N> getRootNodes();
+  Collection<N> getStartNodes();
 
   /**
    * Returns all nodes that do not have outgoing edges.
    *
    * @return all nodes that do not have outgoing edges.
    */
-  Collection<N> getLeafNodes();
+  Collection<N> getEndNodes();
 
   /**
    * Returns all nodes in the DAG.

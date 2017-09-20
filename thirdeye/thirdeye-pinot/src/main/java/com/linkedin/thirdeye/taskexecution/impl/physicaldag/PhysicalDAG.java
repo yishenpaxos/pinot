@@ -4,12 +4,14 @@ import com.google.common.base.Preconditions;
 import com.linkedin.thirdeye.taskexecution.dag.DAG;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
-public class PhysicalDAG implements DAG<PhysicalNode> {
+public class PhysicalDAG implements DAG<PhysicalNode, Channel> {
   private Map<NodeIdentifier, PhysicalNode> rootNodes = new HashMap<>();
   private Map<NodeIdentifier, PhysicalNode> leafNodes = new HashMap<>();
   private Map<NodeIdentifier, PhysicalNode> nodes = new HashMap<>();
@@ -27,12 +29,46 @@ public class PhysicalDAG implements DAG<PhysicalNode> {
     return getOrAdd(node);
   }
 
-  void addNodeDependency(PhysicalNode source, PhysicalNode sink) {
-    Preconditions.checkNotNull(source);
-    Preconditions.checkNotNull(sink);
-
+  /**
+   * Add execution dependency from the source to the sink without considering data exchange between them. See {@link
+   * #addChannel(Channel)} if there is data needs to be passed from the source to the sink.
+   *
+   * @param source the source node.
+   * @param sink the sink node.
+   */
+  void addExecutionDependency(PhysicalNode source, PhysicalNode sink) {
+    Preconditions.checkNotNull(source, "Unable to add an null source.");
+    Preconditions.checkNotNull(sink, "Unable to add an null sink.");
     source = getOrAdd(source);
     sink = getOrAdd(sink);
+    addNodeDependency(source, sink);
+  }
+
+  /**
+   * Add execution dependency from the source to the sink of the channel. Moreover, connect the output port of source
+   * to the input port of sink.
+   *
+   * @param channel the channel that specified the output port of source and input port of sink.
+   */
+  void addChannel(Channel channel) {
+    PhysicalNode source = getNode(channel.getSourceIdentifier());
+    PhysicalNode sink = getNode(channel.getSinkIdentifier());
+    Preconditions.checkNotNull(source, "Source node '%s' doesn't exist in DAG.", channel.getSourceIdentifier());
+    Preconditions.checkNotNull(sink, "Sink node '%s' doesn't exist in DAG.", channel.getSinkIdentifier());
+    Preconditions.checkArgument(!Objects.equals(source, sink), "Source and sink node cannot be the same.");
+
+    addNodeDependency(source, sink);
+    source.addOutgoingEdge(channel);
+    sink.addIncomingEdge(channel);
+  }
+
+  /**
+   * Internal implementation for adding execution dependency from the source to the sink node.
+   *
+   * @param source the source node.
+   * @param sink the sink node.
+   */
+  private void addNodeDependency(PhysicalNode source, PhysicalNode sink) {
     source.addOutgoingNode(sink);
     if (leafNodes.containsKey(source.getIdentifier())) {
       leafNodes.remove(source.getIdentifier());
@@ -41,31 +77,6 @@ public class PhysicalDAG implements DAG<PhysicalNode> {
     if (rootNodes.containsKey(sink.getIdentifier())) {
       rootNodes.remove(sink.getIdentifier());
     }
-  }
-
-  void addChannel(Channel edge) {
-    PhysicalNode source = getNode(edge.getSourceIdentifier());
-    PhysicalNode sink = getNode(edge.getSinkIdentifier());
-    Preconditions.checkNotNull(source, "Source node '%s' doesn't exist in DAG.", edge.getSourceIdentifier());
-    Preconditions.checkNotNull(sink, "Sink node '%s' doesn't exist in DAG.", edge.getSinkIdentifier());
-    Preconditions.checkArgument(!Objects.equals(source, sink), "Source and sink node cannot be the same.");
-
-    source.addOutgoingNode(sink);
-    source.addOutgoingEdge(edge);
-    if (leafNodes.containsKey(source.getIdentifier())) {
-      leafNodes.remove(source.getIdentifier());
-    }
-
-    sink.addIncomingNode(source);
-    sink.addIncomingEdge(edge);
-    if (rootNodes.containsKey(sink.getIdentifier())) {
-        rootNodes.remove(sink.getIdentifier());
-    }
-  }
-
-  @Override
-  public PhysicalNode getNode(NodeIdentifier nodeIdentifier) {
-    return nodes.get(nodeIdentifier);
   }
 
   /**
@@ -89,17 +100,43 @@ public class PhysicalDAG implements DAG<PhysicalNode> {
   }
 
   @Override
+  public PhysicalNode getNode(NodeIdentifier nodeIdentifier) {
+    Preconditions.checkNotNull(nodeIdentifier);
+    return nodes.get(nodeIdentifier);
+  }
+
+  @Override
+  public Set<PhysicalNode> getParents(NodeIdentifier nodeIdentifier) {
+    PhysicalNode node = getNode(nodeIdentifier);
+    if (node != null) {
+      return node.getIncomingNodes();
+    } else {
+      return Collections.emptySet();
+    }
+  }
+
+  @Override
+  public Set<PhysicalNode> getChildren(NodeIdentifier nodeIdentifier) {
+    PhysicalNode node = getNode(nodeIdentifier);
+    if (node != null) {
+      return node.getOutgoingNodes();
+    } else {
+      return Collections.emptySet();
+    }
+  }
+
+  @Override
   public int size() {
     return nodes.size();
   }
 
   @Override
-  public Collection<PhysicalNode> getRootNodes() {
+  public Collection<PhysicalNode> getStartNodes() {
     return new HashSet<>(rootNodes.values());
   }
 
   @Override
-  public Collection<PhysicalNode> getLeafNodes() {
+  public Collection<PhysicalNode> getEndNodes() {
     return new HashSet<>(leafNodes.values());
   }
 

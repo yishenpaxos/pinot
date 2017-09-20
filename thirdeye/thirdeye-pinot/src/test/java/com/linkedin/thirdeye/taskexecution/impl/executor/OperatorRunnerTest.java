@@ -1,4 +1,4 @@
-package com.linkedin.thirdeye.taskexecution.impl.operator;
+package com.linkedin.thirdeye.taskexecution.impl.executor;
 
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;

@@ -21,10 +21,12 @@ public class Channel<T> implements Edge {
     this.sinkIdentity = sinkIdentity;
   }
 
+  @Override
   public OutputPort<? extends T> getSourcePort() {
     return sourcePort;
   }
 
+  @Override
   public InputPort<? super T> getSinkPort() {
     return sinkPort;
   }

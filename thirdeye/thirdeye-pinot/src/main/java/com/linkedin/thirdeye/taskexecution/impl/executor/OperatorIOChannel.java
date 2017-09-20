@@ -1,4 +1,4 @@
-package com.linkedin.thirdeye.taskexecution.impl.operator;
+package com.linkedin.thirdeye.taskexecution.impl.executor;
 
 import com.google.common.base.Preconditions;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.InputPort;

@@ -1,4 +1,4 @@
-package com.linkedin.thirdeye.taskexecution.impl.operator;
+package com.linkedin.thirdeye.taskexecution.impl.executor;
 
 import com.google.common.base.Preconditions;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
@@ -7,14 +7,60 @@ import com.linkedin.thirdeye.taskexecution.impl.physicaldag.NodeConfig;
 import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * OperatorRunner is a wrapper class to setup input and gather the output data of a operator.
  */
-public class OperatorRunner extends AbstractOperatorRunner {
+public class OperatorRunner implements Callable<NodeIdentifier> {
+  private static final Logger LOG = LoggerFactory.getLogger(OperatorRunner.class);
+
+  private NodeIdentifier nodeIdentifier = new NodeIdentifier();
+  private Operator operator;
+  private NodeConfig nodeConfig = new NodeConfig();
+  private ExecutionStatus executionStatus = ExecutionStatus.RUNNING;
+  private Set<OperatorIOChannel> incomingChannels = Collections.emptySet();
+  private Set<OperatorIOChannel> outgoingChannels = Collections.emptySet();
 
   public OperatorRunner(NodeConfig nodeConfig, Operator operator) {
-    super(nodeConfig, operator);
+    Preconditions.checkNotNull(nodeConfig);
+    Preconditions.checkNotNull(operator.getNodeIdentifier());
+
+    this.nodeIdentifier = operator.getNodeIdentifier();
+    this.nodeConfig = nodeConfig;
+    this.operator = operator;
+  }
+
+  public void setIncomingChannels(Set<OperatorIOChannel> incomingChannels) {
+    Preconditions.checkNotNull(incomingChannels);
+    this.incomingChannels = incomingChannels;
+  }
+
+  public void setOutgoingChannels(Set<OperatorIOChannel> outgoingChannels) {
+    Preconditions.checkNotNull(outgoingChannels);
+    this.outgoingChannels = outgoingChannels;
+  }
+
+  public ExecutionStatus getExecutionStatus() {
+    return executionStatus;
+  }
+
+  protected void setFailure(Exception e) {
+    LOG.error("Failed to execute node: {}.", nodeIdentifier, e);
+    if (nodeConfig.skipAtFailure()) {
+      executionStatus = ExecutionStatus.SKIPPED;
+    } else {
+      executionStatus = ExecutionStatus.FAILED;
+    }
+  }
+
+  // TODO: Implement this method
+  static OperatorConfig convertNodeConfigToOperatorConfig(NodeConfig nodeConfig) {
+    return new OperatorConfig();
   }
 
   /**
