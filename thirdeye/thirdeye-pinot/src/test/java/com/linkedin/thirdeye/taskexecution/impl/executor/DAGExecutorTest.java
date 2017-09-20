@@ -226,7 +226,7 @@ public class DAGExecutorTest {
    * DAG: 1 -> 2 -> 3
    */
   @Test
-  public void testFailedChainExecution() {
+  public void testFailedChainExecutionNonStopping() {
     PhysicalDAGBuilder dagBuilder = new PhysicalDAGBuilder();
     LogOperator node1 = dagBuilder.addOperator(new NodeIdentifier("1"), LogOperator.class);
     FailedOperator node2 = dagBuilder.addOperator(new NodeIdentifier("2"), FailedOperator.class);
@@ -248,6 +248,33 @@ public class DAGExecutorTest {
     expectedResults.add(expectedResult);
 
     Assert.assertTrue(checkLinearizability(executionLog, expectedResults));
+  }
+
+  /**
+   * DAG: 1 -> 2 -> 3
+   */
+  @Test
+  public void testFailedChainExecutionWithAborting() {
+    PhysicalDAGBuilder dagBuilder = new PhysicalDAGBuilder();
+    LogOperator node1 = dagBuilder.addOperator(new NodeIdentifier("1"), LogOperator.class);
+    FailedOperator node2 = dagBuilder.addOperator(new NodeIdentifier("2"), FailedOperator.class);
+    LogOperator node3 = dagBuilder.addOperator(new NodeIdentifier("3"), LogOperator.class);
+    dagBuilder.addChannel(node1, node2);
+    dagBuilder.addChannel(node2, node3);
+
+    PhysicalDAG dag = dagBuilder.build();
+    DAGConfig dagConfig = new DAGConfig();
+    dagConfig.setStopAtFailure(true);
+    DAGExecutor dagExecutor = new DAGExecutor(threadPool);
+    dagExecutor.execute(dag, dagConfig);
+
+    try {
+      // Exception is thrown because node 3 is not initialized
+      checkAndGetFinalResult(node3);
+    } catch (Exception e) {
+      return;
+    }
+    Assert.fail();
   }
 
   @Test

@@ -1,5 +1,6 @@
 package com.linkedin.thirdeye.taskexecution.impl.executor;
 
+import com.linkedin.thirdeye.anomaly.utils.AnomalyUtils;
 import com.linkedin.thirdeye.taskexecution.dag.DAG;
 import com.linkedin.thirdeye.taskexecution.dag.Edge;
 import com.linkedin.thirdeye.taskexecution.dag.Node;
@@ -33,7 +34,6 @@ public class DAGExecutor {
   // TODO: Persistent the following status to a DB in case of executor unexpectedly dies
   private Set<NodeIdentifier> processedNodes = new HashSet<>();
   private Map<NodeIdentifier, OperatorRunner> runningNodes = new HashMap<>();
-
 
   public DAGExecutor(ExecutorService executorService) {
     this.executorCompletionService = new ExecutorCompletionService<>(executorService);
