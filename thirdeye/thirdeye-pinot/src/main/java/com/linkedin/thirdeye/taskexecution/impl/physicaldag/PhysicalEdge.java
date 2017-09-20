@@ -47,7 +47,7 @@ public class PhysicalEdge implements Edge {
    */
   public void initRead() {
     if (sourcePort != null && sinkPort != null) {
-      Reader reader = sourcePort.getWriter().toReader();
+      Reader reader = sourcePort.getReader();
       sinkPort.addContext(reader);
     }
   }

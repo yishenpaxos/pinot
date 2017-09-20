@@ -1,7 +1,7 @@
 package com.linkedin.thirdeye.taskexecution.operator;
 
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
-import com.linkedin.thirdeye.taskexecution.dataflow.reader.GenericInputPort;
+import com.linkedin.thirdeye.taskexecution.impl.dataflow.GenericInputPort;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.InputPort;
 
 public abstract class Operator2x1<IN1, IN2, OUT> extends Operator0x1<OUT> {

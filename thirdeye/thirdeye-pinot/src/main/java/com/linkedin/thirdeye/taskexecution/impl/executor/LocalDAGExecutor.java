@@ -24,8 +24,8 @@ import org.slf4j.LoggerFactory;
  * service. An executor takes care of only logical execution (control flow). The physical execution is done by
  * OperatorRunner, which could be executed on other machines.
  */
-public class InMemoryDAGExecutor {
-  private static final Logger LOG = LoggerFactory.getLogger(InMemoryDAGExecutor.class);
+public class LocalDAGExecutor {
+  private static final Logger LOG = LoggerFactory.getLogger(LocalDAGExecutor.class);
   private ExecutorCompletionService<NodeIdentifier> executorCompletionService;
 
   // TODO: Persistent the following status to a DB in case of executor unexpectedly dies
@@ -33,7 +33,7 @@ public class InMemoryDAGExecutor {
   private Map<NodeIdentifier, OperatorRunner> runningNodes = new HashMap<>();
 
 
-  public InMemoryDAGExecutor(ExecutorService executorService) {
+  public LocalDAGExecutor(ExecutorService executorService) {
     this.executorCompletionService = new ExecutorCompletionService<>(executorService);
   }
 

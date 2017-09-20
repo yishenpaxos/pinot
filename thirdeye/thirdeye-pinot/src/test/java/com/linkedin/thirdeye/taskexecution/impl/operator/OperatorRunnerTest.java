@@ -36,7 +36,7 @@ public class OperatorRunnerTest {
     runner.call();
     Assert.assertEquals(runner.getExecutionStatus(), ExecutionStatus.SUCCESS);
 
-    Reader<Integer> integerReader = operator1.getOutputPort().getWriter().toReader();
+    Reader<Integer> integerReader = operator1.getOutputPort().getReader();
     Assert.assertTrue(integerReader.hasNext());
     Assert.assertEquals((int) integerReader.next(), 1);
   }
@@ -59,13 +59,13 @@ public class OperatorRunnerTest {
 
     runner1.call();
     Assert.assertEquals(runner1.getExecutionStatus(), ExecutionStatus.SUCCESS);
-    Reader<Integer> integerReader = operator1.getOutputPort().getWriter().toReader();
+    Reader<Integer> integerReader = operator1.getOutputPort().getReader();
     Assert.assertTrue(integerReader.hasNext());
     Assert.assertEquals((int) integerReader.next(), 1);
 
     runner2.call();
     Assert.assertEquals(runner2.getExecutionStatus(), ExecutionStatus.SUCCESS);
-    Reader<Integer> integerReader2 = operator2.getOutputPort().getWriter().toReader();
+    Reader<Integer> integerReader2 = operator2.getOutputPort().getReader();
     Assert.assertTrue(integerReader2.hasNext());
     Assert.assertEquals((int) integerReader2.next(), 2);
   }

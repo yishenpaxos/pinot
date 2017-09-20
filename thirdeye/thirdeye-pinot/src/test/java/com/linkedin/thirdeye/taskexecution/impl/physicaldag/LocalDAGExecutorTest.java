@@ -2,7 +2,7 @@ package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
-import com.linkedin.thirdeye.taskexecution.impl.executor.InMemoryDAGExecutor;
+import com.linkedin.thirdeye.taskexecution.impl.executor.LocalDAGExecutor;
 import com.linkedin.thirdeye.taskexecution.operator.Operator2x1;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
@@ -21,8 +21,8 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 
-public class InMemoryDAGExecutorTest {
-  private static final Logger LOG = LoggerFactory.getLogger(InMemoryDAGExecutorTest.class);
+public class LocalDAGExecutorTest {
+  private static final Logger LOG = LoggerFactory.getLogger(LocalDAGExecutorTest.class);
   private ExecutorService threadPool = Executors.newFixedThreadPool(10);
 
   /**
@@ -35,7 +35,7 @@ public class InMemoryDAGExecutorTest {
 
     PhysicalDAG dag = dagBuilder.build();
 
-    InMemoryDAGExecutor dagExecutor = new InMemoryDAGExecutor(threadPool);
+    LocalDAGExecutor dagExecutor = new LocalDAGExecutor(threadPool);
     DAGConfig dagConfig = new DAGConfig();
     dagConfig.setStopAtFailure(true);
     dagExecutor.execute(dag, dagConfig);
@@ -59,7 +59,7 @@ public class InMemoryDAGExecutorTest {
     dagBuilder.addChannel(node2.getOutputPort(), node3.getInputPort());
 
     PhysicalDAG physicalDAG = dagBuilder.build();
-    InMemoryDAGExecutor dagExecutor = new InMemoryDAGExecutor(threadPool);
+    LocalDAGExecutor dagExecutor = new LocalDAGExecutor(threadPool);
     dagExecutor.execute(physicalDAG, new DAGConfig());
 
     List<String> executionLog = checkAndGetFinalResult(node3);
@@ -104,7 +104,7 @@ public class InMemoryDAGExecutorTest {
 
     PhysicalDAG dag = dagBuilder.build();
 
-    InMemoryDAGExecutor dagExecutor = new InMemoryDAGExecutor(threadPool);
+    LocalDAGExecutor dagExecutor = new LocalDAGExecutor(threadPool);
     dagExecutor.execute(dag, new DAGConfig());
 
     // Check path 1
@@ -181,7 +181,7 @@ public class InMemoryDAGExecutorTest {
     dagBuilder.addChannel(node12, end);
 
     PhysicalDAG dag = dagBuilder.build();
-    InMemoryDAGExecutor dagExecutor = new InMemoryDAGExecutor(threadPool);
+    LocalDAGExecutor dagExecutor = new LocalDAGExecutor(threadPool);
     dagExecutor.execute(dag, new DAGConfig());
 
     List<String> executionLog = checkAndGetFinalResult(end);
@@ -235,7 +235,7 @@ public class InMemoryDAGExecutorTest {
     PhysicalDAG dag = dagBuilder.build();
     DAGConfig dagConfig = new DAGConfig();
     dagConfig.setStopAtFailure(false);
-    InMemoryDAGExecutor dagExecutor = new InMemoryDAGExecutor(threadPool);
+    LocalDAGExecutor dagExecutor = new LocalDAGExecutor(threadPool);
     dagExecutor.execute(dag, dagConfig);
 
     List<String> executionLog = checkAndGetFinalResult(node3);
@@ -251,20 +251,21 @@ public class InMemoryDAGExecutorTest {
   @Test
   public void testStaticTypeChecking() {
     PhysicalDAGBuilder dagBuilder = new PhysicalDAGBuilder();
-    LogOperator stringStringNode = dagBuilder.addOperator(new NodeIdentifier("start"), LogOperator.class);
+    LogOperator stringStringNode = dagBuilder.addOperator(new NodeIdentifier("stringStringNode"), LogOperator.class);
 
     // The following addChannels() should NOT compile because of static type checking
-    IntLogOperator intIntNode = dagBuilder.addOperator(new NodeIdentifier("32"), IntLogOperator.class);
+    IntIntOperator intIntNode = dagBuilder.addOperator(new NodeIdentifier("intIntNode"), IntIntOperator.class);
 //    dagBuilder.addChannel(stringStringNode, intIntNode);
 //    dagBuilder.addChannel(stringStringNode.getOutputPort(), intIntNode.getInputPort());
 
-    IntStringLogOperator intStringNumberNode = dagBuilder.addOperator(new NodeIdentifier("intString"), IntStringLogOperator.class);
+    IntStringNumberOperator
+        intStringNumberNode = dagBuilder.addOperator(new NodeIdentifier("intStringNumberNode"), IntStringNumberOperator.class);
     dagBuilder.addChannels(intIntNode, stringStringNode, intStringNumberNode);
 
     PhysicalDAG dag = dagBuilder.build();
     DAGConfig dagConfig = new DAGConfig();
-    dagConfig.setStopAtFailure(false);
-    InMemoryDAGExecutor dagExecutor = new InMemoryDAGExecutor(threadPool);
+    dagConfig.setStopAtFailure(true);
+    LocalDAGExecutor dagExecutor = new LocalDAGExecutor(threadPool);
     dagExecutor.execute(dag, dagConfig);
   }
 
@@ -321,7 +322,7 @@ public class InMemoryDAGExecutorTest {
   /**
    * An operator for testing incompatible input and output port type.
    */
-  public static class IntLogOperator extends Operator1x1<Integer, Integer> {
+  public static class IntIntOperator extends Operator1x1<Integer, Integer> {
     @Override
     public void initialize(OperatorConfig operatorConfig) {
     }
@@ -331,7 +332,7 @@ public class InMemoryDAGExecutorTest {
     }
   }
 
-  public static class IntStringLogOperator extends Operator2x1<Integer, List<String>, Number> {
+  public static class IntStringNumberOperator extends Operator2x1<Integer, List<String>, Number> {
     @Override
     public void initialize(OperatorConfig operatorConfig) {
     }
@@ -350,7 +351,7 @@ public class InMemoryDAGExecutorTest {
    * @return the final execution log of the DAG.
    */
   private static List<String> checkAndGetFinalResult(LogOperator operator) {
-    Reader<List<String>> reader = operator.getOutputPort().getWriter().toReader();
+    Reader<List<String>> reader = operator.getOutputPort().getReader();
     Assert.assertTrue(reader.hasNext());
     return reader.next();
   }

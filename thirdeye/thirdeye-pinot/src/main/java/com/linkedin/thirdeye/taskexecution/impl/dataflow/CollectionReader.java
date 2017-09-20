@@ -3,21 +3,20 @@ package com.linkedin.thirdeye.taskexecution.impl.dataflow;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 
-public class InMemoryCollectionReader<T> implements Reader<T> {
-  private ImmutableList<T> storage = ImmutableList.<T>builder().build();
+public class CollectionReader<T> implements Reader<T> {
+  private Collection<T> storage;
   private Iterator<T> iterator;
 
-  public InMemoryCollectionReader() {
+  public CollectionReader() {
   }
 
-  public InMemoryCollectionReader(List<T> storage) {
+  public CollectionReader(Collection<T> storage) {
     Preconditions.checkNotNull(storage);
-    this.storage = ImmutableList.<T>builder().addAll(storage).build();
+    this.storage = storage;
   }
 
   @Override
@@ -34,7 +33,11 @@ public class InMemoryCollectionReader<T> implements Reader<T> {
 
   private void initIterator() {
     if (iterator == null) {
-      iterator = storage.iterator();
+      if (storage != null) {
+        iterator = storage.iterator();
+      } else {
+        iterator = (Iterator<T>) Collections.emptyList().iterator();
+      }
     }
   }
 
@@ -43,20 +46,20 @@ public class InMemoryCollectionReader<T> implements Reader<T> {
   }
 
   public static class Builder<T> {
-    private List<T> storage = new ArrayList<>();
+    private ImmutableList.Builder<T> builder = ImmutableList.builder();
 
     public Builder<T> add(T o) {
-      storage.add(o);
+      builder.add(o);
       return this;
     }
 
     public Builder<T> addAll(Collection<T> collection) {
-      storage.addAll(collection);
+      builder.addAll(collection);
       return this;
     }
 
-    public InMemoryCollectionReader<T> build() {
-      return new InMemoryCollectionReader<>(storage);
+    public CollectionReader<T> build() {
+      return new CollectionReader<>(builder.build());
     }
   }
 }

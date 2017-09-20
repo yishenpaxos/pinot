@@ -11,10 +11,9 @@ import com.linkedin.thirdeye.taskexecution.operator.Operator1x1;
 import com.linkedin.thirdeye.taskexecution.operator.Operator2x1;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorUtils;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 public class PhysicalDAGBuilder {
   private Map<NodeIdentifier, Operator> operators;
@@ -40,9 +39,9 @@ public class PhysicalDAGBuilder {
     }
   }
 
-  public <T1, T2> Set<Channel> addChannels(Operator0x1<? extends T1> source1, Operator0x1<? extends T2> source2,
+  public <T1, T2> LinkedHashSet<Channel> addChannels(Operator0x1<? extends T1> source1, Operator0x1<? extends T2> source2,
       Operator2x1<? super T1, ? super T2, ?> sink) {
-    Set<Channel> channels = new HashSet<>();
+    LinkedHashSet<Channel> channels = new LinkedHashSet<>();
     channels.add(addChannel(source1.getOutputPort(), sink.getInputPort1()));
     channels.add(addChannel(source2.getOutputPort(), sink.getInputPort2()));
     return channels;
