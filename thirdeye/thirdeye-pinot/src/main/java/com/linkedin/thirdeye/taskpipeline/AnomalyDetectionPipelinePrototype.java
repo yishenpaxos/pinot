@@ -10,6 +10,7 @@ import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
 import com.linkedin.thirdeye.taskexecution.impl.executor.DAGExecutor;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.DAGConfig;
+import com.linkedin.thirdeye.taskexecution.impl.physicaldag.NodeConfig;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.PhysicalDAGBuilder;
 import com.linkedin.thirdeye.taskexecution.operator.Operator0x1;
 import com.linkedin.thirdeye.taskexecution.operator.Operator1x1;
@@ -27,68 +28,104 @@ import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AnomalyDetectionPipeline {
-  private static final Logger LOG = LoggerFactory.getLogger(AnomalyDetectionPipeline.class);
+/**
+ * A class for prototyping a DAG for anomaly detection.
+ *
+ * TODO: Generalize to JobPlan or PlanNode
+ */
+public class AnomalyDetectionPipelinePrototype {
+  private static final Logger LOG = LoggerFactory.getLogger(AnomalyDetectionPipelinePrototype.class);
 
   /**
    * Returns the following DAG:
    *
-   * TimeSeriesFetcher ---> AnomalyDetectionOperator --> AnomalyMerger
-   *                   /
-   * AnomalyFetcher --/
+   * TimeSeriesFetcher ---> AnomalyDetectionOperator --> AnomalyMerger --> TimeSeriesFetcher --> AnomalyUpdater
+   *                   /                                                \                    /
+   * AnomalyFetcher --/                                                  \ AnomalyFetcher --/
    */
   public static DAG getDAG() {
     PhysicalDAGBuilder dagBuilder = new PhysicalDAGBuilder();
 
     TimeSeriesFetcher timeSeriesFetcher =
-        dagBuilder.addOperator(new NodeIdentifier("TimeSeriesFetcher"), TimeSeriesFetcher.class);
+        dagBuilder.addOperator(new NodeIdentifier("TimeSeriesFetcher"), new TimeSeriesFetcher());
 
     AnomalyFetcher anomalyFetcher = dagBuilder.addOperator(new NodeIdentifier("AnomalyFetcher"), AnomalyFetcher.class);
 
     AnomalyDetectionOperator detectionOperator =
-        dagBuilder.addOperator(new NodeIdentifier("AnomalyDetector"), AnomalyDetectionOperator.class);
+        dagBuilder.addOperator(new NodeIdentifier("AnomalyDetector"), new AnomalyDetectionOperator());
 
     AnomalyMerger merger = dagBuilder.addOperator(new NodeIdentifier("Merger"), AnomalyMerger.class);
 
     dagBuilder.addChannels(timeSeriesFetcher, anomalyFetcher, detectionOperator);
+    dagBuilder.addChannel(timeSeriesFetcher.getOutputPort(), detectionOperator.getInputPort1());
     dagBuilder.addChannel(detectionOperator, merger);
 
     return dagBuilder.build();
   }
 
+  private static DAGConfig getDagConfig() {
+    DAGConfig dagConfig = new DAGConfig();
+
+    NodeConfig timeSeriesFetcherNodeConfig = new NodeConfig();
+    dagConfig.putNodeConfig(new NodeIdentifier("TimeSeriesFetcher"), timeSeriesFetcherNodeConfig);
+
+    return dagConfig;
+  }
+
   public static void main(String[] args) {
-    DAG anomalyDetectionPipeline = AnomalyDetectionPipeline.getDAG();
+    DAG anomalyDetectionPipeline = AnomalyDetectionPipelinePrototype.getDAG();
     ExecutorService executorService = Executors.newFixedThreadPool(10);
     DAGExecutor executor = new DAGExecutor(executorService);
     executor.execute(anomalyDetectionPipeline, new DAGConfig());
-    AnomalyUtils.safelyShutdownExecutionService(executorService, 30, AnomalyDetectionPipeline.class);
+    AnomalyUtils.safelyShutdownExecutionService(executorService, 30, AnomalyDetectionPipelinePrototype.class);
   }
 
+  public static class TimeSeriesFetcherConfig extends OperatorConfig {
+    public long startTime;
+    public long endTime;
+  }
+
+
+  /**
+   * Dummy Time Series Fetcher
+   */
   public static class TimeSeriesFetcher extends Operator0x1<DataFrame> {
+    public TimeSeriesFetcher() {
+      // Runtime configuration goes here?
+      //   Parameters that are generated according to job context such as monitoring window, time range intervals, etc.
+    }
+
     @Override
     public void initialize(OperatorConfig operatorConfig) {
-
+      // Static configuration goes here
+      //   Parameters that are declare in the configuration file that are stored in some file system.
     }
 
     @Override
     public void run(OperatorContext operatorContext) {
+      // Runtime configuration goes here?
+      // Job context (monitoring window) could go here.
+      // Time range intervals, which is derived from Anomaly Function, is difficult to get.
+
       LOG.info("Running {}...", operatorContext.getNodeIdentifier());
 
-      DataFrame dataFrame = new DataFrame(3)
-          .addSeries("testDoubles", 1.0, 2.0, 3.0);
+      DataFrame dataFrame = new DataFrame(3).addSeries("testDoubles", 1.0, 2.0, 3.0);
+      //      DataFrame next = new DataFrame();
+      //      next.addSeries(COL_TIMESTAMP, 0, 1, 2, 3, 4);
+      //      next.addSeries(COL_VALUE, 1.0, 2.0, 3.0, 4.0);
+      //      next.setIndex(COL_TIMESTAMP);
+      //      dataFrame.addSeries(next, "testIntegers");
+      //      dataFrame.groupByValue("index", "testInteger").aggregate("index:FIRST", "testInteger:FIRST", "testDouble:SUM");
 
-//      DataFrame next = new DataFrame();
-//      next.addSeries(COL_TIMESTAMP, 0, 1, 2, 3, 4);
-//      next.addSeries(COL_VALUE, 1.0, 2.0, 3.0, 4.0);
-//      next.setIndex(COL_TIMESTAMP);
-//      dataFrame.addSeries(next, "testIntegers");
-//      dataFrame.groupByValue("index", "testInteger").aggregate("index:FIRST", "testInteger:FIRST", "testDouble:SUM");
-
-      LOG.info("{} fetched time series {}: {}", operatorContext.getNodeIdentifier(), "testDoubles", dataFrame.toString());
+      LOG.info("{} fetched time series {}: {}", operatorContext.getNodeIdentifier(), "testDoubles",
+          dataFrame.toString());
       getOutputPort().getWriter().write(dataFrame);
     }
   }
 
+  /**
+   * Dummy Anomaly Fetcher
+   */
   public static class AnomalyFetcher extends Operator0x1<Map<DimensionMap, List<AnomalyResult>>> {
     @Override
     public void initialize(OperatorConfig operatorConfig) {
@@ -128,6 +165,9 @@ public class AnomalyDetectionPipeline {
     }
   }
 
+  /**
+   * Dummy Anomaly Detector
+   */
   public static class AnomalyDetectionOperator
       extends Operator2x1<DataFrame, Map<DimensionMap, List<AnomalyResult>>, Map<DimensionMap, List<AnomalyResult>>> {
 
@@ -182,6 +222,9 @@ public class AnomalyDetectionPipeline {
     }
   }
 
+  /**
+   * Dummy Anomaly Merger
+   */
   public static class AnomalyMerger
       extends Operator1x1<Map<DimensionMap, List<AnomalyResult>>, Map<DimensionMap, List<AnomalyResult>>> {
 
@@ -222,6 +265,9 @@ public class AnomalyDetectionPipeline {
     }
   }
 
+  /**
+   * Dummy Anomaly class
+   */
   public static class DummyAnomaly implements AnomalyResult {
     long startTime;
     long endTime;

@@ -28,12 +28,28 @@ public class PhysicalDAGBuilder {
     channels = new HashMap<>();
   }
 
+  public <T extends AbstractOperator> T addOperator(String identifier, Class<T> operatorClaz) {
+    Preconditions.checkNotNull(identifier);
+    T operator = OperatorUtils.initiateOperatorInstance(operatorClaz);
+    NodeIdentifier nodeIdentifier = new NodeIdentifier(identifier);
+    operator.setNodeIdentifier(nodeIdentifier);
+    return addOperator(nodeIdentifier, operator);
+  }
+
   public <T extends AbstractOperator> T addOperator(NodeIdentifier nodeIdentifier, Class<T> operatorClaz) {
     Preconditions.checkNotNull(nodeIdentifier);
+    T operator = OperatorUtils.initiateOperatorInstance(nodeIdentifier, operatorClaz);
+    return addOperator(nodeIdentifier, operator);
+  }
+
+  public <T extends AbstractOperator> T addOperator(NodeIdentifier nodeIdentifier, T operator) {
+    Preconditions.checkNotNull(nodeIdentifier);
+    Preconditions.checkNotNull(operator);
+
     if (operators.containsKey(nodeIdentifier)) {
       return (T) operators.get(nodeIdentifier);
     } else {
-      T operator = OperatorUtils.initiateOperatorInstance(nodeIdentifier, operatorClaz);
+      operator.setNodeIdentifier(nodeIdentifier);
       operators.put(nodeIdentifier, operator);
       return operator;
     }

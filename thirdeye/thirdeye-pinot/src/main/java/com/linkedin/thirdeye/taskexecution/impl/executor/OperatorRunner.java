@@ -77,8 +77,8 @@ public class OperatorRunner implements Callable<NodeIdentifier> {
       for (int i = 0; i <= numRetry; ++i) {
         try {
           // Initialize local input and output ports
-          operator.initialInputPorts();
-          operator.initialOutputPorts();
+          operator.initializeIOPorts();
+          operator.initializeOutputPorts();
 
           // Read context from remote output ports to local input ports
           for (OperatorIOChannel edge : incomingChannels) {

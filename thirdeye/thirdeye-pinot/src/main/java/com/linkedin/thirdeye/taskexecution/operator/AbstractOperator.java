@@ -13,7 +13,7 @@ public abstract class AbstractOperator implements Operator {
     setNodeIdentifier(nodeIdentifier);
   }
 
-  final void setNodeIdentifier(NodeIdentifier nodeIdentifier) {
+  public final void setNodeIdentifier(NodeIdentifier nodeIdentifier) {
     Preconditions.checkNotNull(nodeIdentifier);
     this.nodeIdentifier = nodeIdentifier;
   }
@@ -21,15 +21,5 @@ public abstract class AbstractOperator implements Operator {
   @Override
   final public NodeIdentifier getNodeIdentifier() {
     return nodeIdentifier;
-  }
-
-  @Override
-  public void initialInputPorts() {
-
-  }
-
-  @Override
-  public void initialOutputPorts() {
-
   }
 }

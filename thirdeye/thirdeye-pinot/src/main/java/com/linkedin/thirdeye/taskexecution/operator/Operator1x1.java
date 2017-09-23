@@ -19,7 +19,8 @@ public abstract class Operator1x1<IN, OUT> extends Operator0x1<OUT> {
   }
 
   @Override
-  public void initialInputPorts() {
+  public void initializeIOPorts() {
+    super.initializeIOPorts();
     inputPort.initialize();
   }
 }

@@ -3,8 +3,6 @@ package com.linkedin.thirdeye.taskexecution.dag;
 import com.google.common.base.Preconditions;
 import java.util.Objects;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
 
 public class NodeIdentifier {
   public static final String SEPARATOR = "::";
@@ -77,6 +75,8 @@ public class NodeIdentifier {
 
   @Override
   public String toString() {
-    return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
+    final StringBuilder sb = new StringBuilder("NodeIdentifier{");
+    sb.append(getFullName()).append('}');
+    return sb.toString();
   }
 }
