@@ -1,5 +1,7 @@
 package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
+import com.linkedin.thirdeye.taskexecution.executor.DAGConfig;
+import com.linkedin.thirdeye.taskexecution.executor.NodeConfig;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

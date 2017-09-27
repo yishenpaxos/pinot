@@ -1,8 +1,7 @@
 package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
 
-import com.linkedin.thirdeye.taskexecution.operator.AbstractOperator;
+import com.linkedin.thirdeye.taskexecution.impl.operator.AbstractOperator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
-import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -80,7 +79,7 @@ public class PhysicalDAGTest {
     }
 
     @Override
-    public void run(OperatorContext operatorContext) {
+    public void run() {
     }
   }
 }

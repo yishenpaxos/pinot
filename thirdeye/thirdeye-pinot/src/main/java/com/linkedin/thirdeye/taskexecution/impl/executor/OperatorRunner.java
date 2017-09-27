@@ -2,11 +2,11 @@ package com.linkedin.thirdeye.taskexecution.impl.executor;
 
 import com.google.common.base.Preconditions;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
-import com.linkedin.thirdeye.taskexecution.impl.physicaldag.ExecutionStatus;
-import com.linkedin.thirdeye.taskexecution.impl.physicaldag.NodeConfig;
+import com.linkedin.thirdeye.taskexecution.executor.ExecutionResult;
+import com.linkedin.thirdeye.taskexecution.executor.ExecutionStatus;
+import com.linkedin.thirdeye.taskexecution.executor.NodeConfig;
 import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
-import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -16,17 +16,21 @@ import org.slf4j.LoggerFactory;
 /**
  * OperatorRunner is a wrapper class to setup input and gather the output data of a operator.
  */
-public class OperatorRunner implements Callable<NodeIdentifier> {
+public class OperatorRunner implements Callable<ExecutionResult> {
   private static final Logger LOG = LoggerFactory.getLogger(OperatorRunner.class);
 
-  private NodeIdentifier nodeIdentifier = new NodeIdentifier();
+  private NodeIdentifier nodeIdentifier = new NodeIdentifier("Unknown");
   private Operator operator;
   private NodeConfig nodeConfig = new NodeConfig();
-  private ExecutionStatus executionStatus = ExecutionStatus.RUNNING;
   private Set<OperatorIOChannel> incomingChannels = Collections.emptySet();
   private Set<OperatorIOChannel> outgoingChannels = Collections.emptySet();
 
-  public OperatorRunner(NodeConfig nodeConfig, Operator operator) {
+  // TODO: Get system context (e.g., thirdeye config, function factory, etc.) from somewhere magically.
+  private SystemContext systemContext;
+
+  private ExecutionStatus executionStatus = ExecutionStatus.RUNNING;
+
+  public OperatorRunner(Operator operator, NodeConfig nodeConfig) {
     Preconditions.checkNotNull(nodeConfig);
     Preconditions.checkNotNull(operator.getNodeIdentifier());
 
@@ -45,8 +49,11 @@ public class OperatorRunner implements Callable<NodeIdentifier> {
     this.outgoingChannels = outgoingChannels;
   }
 
-  public ExecutionStatus getExecutionStatus() {
-    return executionStatus;
+  public ExecutionResult getExecutionResult() {
+    ExecutionResult executionResult = new ExecutionResult();
+    executionResult.setNodeIdentifier(nodeIdentifier);
+    executionResult.setExecutionStatus(executionStatus);
+    return executionResult;
   }
 
   protected void setFailure(Exception e) {
@@ -58,9 +65,10 @@ public class OperatorRunner implements Callable<NodeIdentifier> {
     }
   }
 
-  // TODO: Implement this method
-  static OperatorConfig convertNodeConfigToOperatorConfig(NodeConfig nodeConfig) {
-    return new OperatorConfig();
+  static OperatorConfig initializeOperatorConfigFromNodeConfig(Operator operator, NodeConfig nodeConfig, SystemContext systemContext) {
+    OperatorConfig operatorConfig = operator.newOperatorConfigInstance();
+    operatorConfig.initialize(nodeConfig.getRawOperatorConfig(), systemContext);
+    return operatorConfig;
   }
 
   /**
@@ -70,26 +78,24 @@ public class OperatorRunner implements Callable<NodeIdentifier> {
    * @return the node identifier of this node (i.e., OperatorRunner).
    */
   @Override
-  public NodeIdentifier call() {
+  public ExecutionResult call() {
     try {
-      Preconditions.checkNotNull(nodeIdentifier, "Node identifier cannot be null");
       int numRetry = nodeConfig.numRetryAtError();
       for (int i = 0; i <= numRetry; ++i) {
         try {
           // Initialize local input and output ports
           operator.initializeIOPorts();
-          operator.initializeOutputPorts();
 
           // Read context from remote output ports to local input ports
-          for (OperatorIOChannel edge : incomingChannels) {
-            edge.initInputPort();
+          for (OperatorIOChannel channel : incomingChannels) {
+            channel.prepareInputPortContext();
           }
 
           // Initialize operator
-          OperatorConfig operatorConfig = convertNodeConfigToOperatorConfig(nodeConfig);
+          OperatorConfig operatorConfig = initializeOperatorConfigFromNodeConfig(operator, nodeConfig, systemContext);
           operator.initialize(operatorConfig);
           // Run operator
-          operator.run(new OperatorContext(nodeIdentifier));
+          operator.run();
 
           // Flush context in local output ports, which may write context to a remote DB.
           for (OperatorIOChannel edge : outgoingChannels) {
@@ -107,6 +113,6 @@ public class OperatorRunner implements Callable<NodeIdentifier> {
     } catch (Exception e) {
       setFailure(e);
     }
-    return nodeIdentifier;
+    return getExecutionResult();
   }
 }

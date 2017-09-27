@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public class PhysicalDAG implements DAG<PhysicalNode, Channel> {
+public class PhysicalDAG implements DAG {
   private Map<NodeIdentifier, PhysicalNode> rootNodes = new HashMap<>();
   private Map<NodeIdentifier, PhysicalNode> leafNodes = new HashMap<>();
   private Map<NodeIdentifier, PhysicalNode> nodes = new HashMap<>();

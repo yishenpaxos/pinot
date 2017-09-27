@@ -26,7 +26,7 @@ public class OperatorIOChannel {
   /**
    * This method is supposed to be invoked by the operator runner that runs the sink operator.
    */
-  public void initInputPort() {
+  public void prepareInputPortContext() {
     if (sourcePort != null && sinkPort != null) {
       Reader reader = sourcePort.getReader();
       sinkPort.addContext(reader);

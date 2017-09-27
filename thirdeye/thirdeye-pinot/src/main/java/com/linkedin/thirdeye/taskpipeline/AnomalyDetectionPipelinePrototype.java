@@ -8,15 +8,17 @@ import com.linkedin.thirdeye.dataframe.DataFrame;
 import com.linkedin.thirdeye.taskexecution.dag.DAG;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
-import com.linkedin.thirdeye.taskexecution.impl.executor.DAGExecutor;
-import com.linkedin.thirdeye.taskexecution.impl.physicaldag.DAGConfig;
-import com.linkedin.thirdeye.taskexecution.impl.physicaldag.NodeConfig;
+import com.linkedin.thirdeye.taskexecution.executor.ExecutionEngine;
+import com.linkedin.thirdeye.taskexecution.impl.executor.DefaultDAGExecutor;
+import com.linkedin.thirdeye.taskexecution.executor.DAGConfig;
+import com.linkedin.thirdeye.taskexecution.executor.NodeConfig;
+import com.linkedin.thirdeye.taskexecution.impl.executor.DefaultExecutionEngine;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.PhysicalDAGBuilder;
-import com.linkedin.thirdeye.taskexecution.operator.Operator0x1;
-import com.linkedin.thirdeye.taskexecution.operator.Operator1x1;
-import com.linkedin.thirdeye.taskexecution.operator.Operator2x1;
+import com.linkedin.thirdeye.taskexecution.impl.operator.BaseOperatorConfig;
+import com.linkedin.thirdeye.taskexecution.impl.operator.Operator0x1;
+import com.linkedin.thirdeye.taskexecution.impl.operator.Operator1x1;
+import com.linkedin.thirdeye.taskexecution.impl.operator.Operator2x1;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
-import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -73,18 +75,20 @@ public class AnomalyDetectionPipelinePrototype {
   }
 
   public static void main(String[] args) {
-    DAG anomalyDetectionPipeline = AnomalyDetectionPipelinePrototype.getDAG();
     ExecutorService executorService = Executors.newFixedThreadPool(10);
-    DAGExecutor executor = new DAGExecutor(executorService);
+    ExecutionEngine executionEngine = new DefaultExecutionEngine(executorService);
+    DefaultDAGExecutor executor = new DefaultDAGExecutor(executionEngine);
+
+    DAG anomalyDetectionPipeline = AnomalyDetectionPipelinePrototype.getDAG();
     executor.execute(anomalyDetectionPipeline, new DAGConfig());
+
     AnomalyUtils.safelyShutdownExecutionService(executorService, 30, AnomalyDetectionPipelinePrototype.class);
   }
 
-  public static class TimeSeriesFetcherConfig extends OperatorConfig {
+  public static class TimeSeriesFetcherConfig extends BaseOperatorConfig {
     public long startTime;
     public long endTime;
   }
-
 
   /**
    * Dummy Time Series Fetcher
@@ -96,18 +100,24 @@ public class AnomalyDetectionPipelinePrototype {
     }
 
     @Override
-    public void initialize(OperatorConfig operatorConfig) {
-      // Static configuration goes here
-      //   Parameters that are declare in the configuration file that are stored in some file system.
+    public OperatorConfig newOperatorConfigInstance() {
+      return new TimeSeriesFetcherConfig();
     }
 
     @Override
-    public void run(OperatorContext operatorContext) {
+    public void initialize(OperatorConfig operatorConfig) {
+      // Static configuration goes here
+      //   Parameters that are declare in the configuration file that are stored in some file system.
+      TimeSeriesFetcherConfig config = (TimeSeriesFetcherConfig) operatorConfig;
+    }
+
+    @Override
+    public void run() {
       // Runtime configuration goes here?
       // Job context (monitoring window) could go here.
       // Time range intervals, which is derived from Anomaly Function, is difficult to get.
 
-      LOG.info("Running {}...", operatorContext.getNodeIdentifier());
+      LOG.info("Running {}...", getNodeIdentifier());
 
       DataFrame dataFrame = new DataFrame(3).addSeries("testDoubles", 1.0, 2.0, 3.0);
       //      DataFrame next = new DataFrame();
@@ -117,7 +127,7 @@ public class AnomalyDetectionPipelinePrototype {
       //      dataFrame.addSeries(next, "testIntegers");
       //      dataFrame.groupByValue("index", "testInteger").aggregate("index:FIRST", "testInteger:FIRST", "testDouble:SUM");
 
-      LOG.info("{} fetched time series {}: {}", operatorContext.getNodeIdentifier(), "testDoubles",
+      LOG.info("{} fetched time series {}: {}", getNodeIdentifier(), "testDoubles",
           dataFrame.toString());
       getOutputPort().getWriter().write(dataFrame);
     }
@@ -133,8 +143,8 @@ public class AnomalyDetectionPipelinePrototype {
     }
 
     @Override
-    public void run(OperatorContext operatorContext) {
-      NodeIdentifier nodeIdentifier = operatorContext.getNodeIdentifier();
+    public void run() {
+      NodeIdentifier nodeIdentifier = getNodeIdentifier();
       LOG.info("Running {}...", nodeIdentifier);
 
       Map<DimensionMap, List<AnomalyResult>> oldAnomalies = new HashMap<>();
@@ -177,8 +187,8 @@ public class AnomalyDetectionPipelinePrototype {
     }
 
     @Override
-    public void run(OperatorContext operatorContext) {
-      NodeIdentifier identifier = operatorContext.getNodeIdentifier();
+    public void run() {
+      NodeIdentifier identifier = getNodeIdentifier();
       LOG.info("Running {}...", identifier);
 
       Reader<DataFrame> reader1 = getInputPort1().getReader();
@@ -234,8 +244,8 @@ public class AnomalyDetectionPipelinePrototype {
     }
 
     @Override
-    public void run(OperatorContext operatorContext) {
-      NodeIdentifier nodeIdentifier = operatorContext.getNodeIdentifier();
+    public void run() {
+      NodeIdentifier nodeIdentifier = getNodeIdentifier();
       LOG.info("Running {}...", nodeIdentifier);
       Reader<Map<DimensionMap, List<AnomalyResult>>> reader = getInputPort().getReader();
       while (reader.hasNext()) {

@@ -2,13 +2,13 @@ package com.linkedin.thirdeye.taskexecution.impl.executor;
 
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
-import com.linkedin.thirdeye.taskexecution.impl.physicaldag.DAGConfig;
+import com.linkedin.thirdeye.taskexecution.executor.DAGConfig;
+import com.linkedin.thirdeye.taskexecution.executor.ExecutionEngine;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.PhysicalDAG;
 import com.linkedin.thirdeye.taskexecution.impl.physicaldag.PhysicalDAGBuilder;
-import com.linkedin.thirdeye.taskexecution.operator.Operator2x1;
+import com.linkedin.thirdeye.taskexecution.impl.operator.Operator2x1;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
-import com.linkedin.thirdeye.taskexecution.operator.OperatorContext;
-import com.linkedin.thirdeye.taskexecution.operator.Operator1x1;
+import com.linkedin.thirdeye.taskexecution.impl.operator.Operator1x1;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -23,8 +23,8 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 
-public class DAGExecutorTest {
-  private static final Logger LOG = LoggerFactory.getLogger(DAGExecutorTest.class);
+public class DefaultDAGExecutorTest {
+  private static final Logger LOG = LoggerFactory.getLogger(DefaultDAGExecutorTest.class);
   private ExecutorService threadPool = Executors.newFixedThreadPool(10);
 
   /**
@@ -37,7 +37,8 @@ public class DAGExecutorTest {
 
     PhysicalDAG dag = dagBuilder.build();
 
-    DAGExecutor dagExecutor = new DAGExecutor(threadPool);
+    ExecutionEngine executionEngine = new DefaultExecutionEngine(threadPool);
+    DefaultDAGExecutor dagExecutor = new DefaultDAGExecutor(executionEngine);
     DAGConfig dagConfig = new DAGConfig();
     dagConfig.setStopAtFailure(true);
     dagExecutor.execute(dag, dagConfig);
@@ -61,7 +62,8 @@ public class DAGExecutorTest {
     dagBuilder.addChannel(node2.getOutputPort(), node3.getInputPort());
 
     PhysicalDAG physicalDAG = dagBuilder.build();
-    DAGExecutor dagExecutor = new DAGExecutor(threadPool);
+    ExecutionEngine executionEngine = new DefaultExecutionEngine(threadPool);
+    DefaultDAGExecutor dagExecutor = new DefaultDAGExecutor(executionEngine);
     dagExecutor.execute(physicalDAG, new DAGConfig());
 
     List<String> executionLog = checkAndGetFinalResult(node3);
@@ -106,7 +108,8 @@ public class DAGExecutorTest {
 
     PhysicalDAG dag = dagBuilder.build();
 
-    DAGExecutor dagExecutor = new DAGExecutor(threadPool);
+    ExecutionEngine executionEngine = new DefaultExecutionEngine(threadPool);
+    DefaultDAGExecutor dagExecutor = new DefaultDAGExecutor(executionEngine);
     dagExecutor.execute(dag, new DAGConfig());
 
     // Check path 1
@@ -183,7 +186,8 @@ public class DAGExecutorTest {
     dagBuilder.addChannel(node12, end);
 
     PhysicalDAG dag = dagBuilder.build();
-    DAGExecutor dagExecutor = new DAGExecutor(threadPool);
+    ExecutionEngine executionEngine = new DefaultExecutionEngine(threadPool);
+    DefaultDAGExecutor dagExecutor = new DefaultDAGExecutor(executionEngine);
     dagExecutor.execute(dag, new DAGConfig());
 
     List<String> executionLog = checkAndGetFinalResult(end);
@@ -237,7 +241,8 @@ public class DAGExecutorTest {
     PhysicalDAG dag = dagBuilder.build();
     DAGConfig dagConfig = new DAGConfig();
     dagConfig.setStopAtFailure(false);
-    DAGExecutor dagExecutor = new DAGExecutor(threadPool);
+    ExecutionEngine executionEngine = new DefaultExecutionEngine(threadPool);
+    DefaultDAGExecutor dagExecutor = new DefaultDAGExecutor(executionEngine);
     dagExecutor.execute(dag, dagConfig);
 
     List<String> executionLog = checkAndGetFinalResult(node3);
@@ -265,7 +270,8 @@ public class DAGExecutorTest {
     PhysicalDAG dag = dagBuilder.build();
     DAGConfig dagConfig = new DAGConfig();
     dagConfig.setStopAtFailure(true);
-    DAGExecutor dagExecutor = new DAGExecutor(threadPool);
+    ExecutionEngine executionEngine = new DefaultExecutionEngine(threadPool);
+    DefaultDAGExecutor dagExecutor = new DefaultDAGExecutor(executionEngine);
     dagExecutor.execute(dag, dagConfig);
 
     try {
@@ -294,7 +300,8 @@ public class DAGExecutorTest {
     PhysicalDAG dag = dagBuilder.build();
     DAGConfig dagConfig = new DAGConfig();
     dagConfig.setStopAtFailure(true);
-    DAGExecutor dagExecutor = new DAGExecutor(threadPool);
+    ExecutionEngine executionEngine = new DefaultExecutionEngine(threadPool);
+    DefaultDAGExecutor dagExecutor = new DefaultDAGExecutor(executionEngine);
     dagExecutor.execute(dag, dagConfig);
   }
 
@@ -317,8 +324,8 @@ public class DAGExecutorTest {
     }
 
     @Override
-    public void run(OperatorContext operatorContext) {
-      LOG.info("Running node: {}", operatorContext.getNodeIdentifier().getName());
+    public void run() {
+      LOG.info("Running node: {}", getNodeIdentifier().getFullName());
       List<String> executionLog = new ArrayList<>();
       Reader<List<String>> reader = getInputPort().getReader();
       while (reader.hasNext()) {
@@ -329,7 +336,7 @@ public class DAGExecutorTest {
           }
         }
       }
-      executionLog.add(operatorContext.getNodeIdentifier().getName());
+      executionLog.add(getNodeIdentifier().getFullName());
       getOutputPort().getWriter().write(executionLog);
     }
   }
@@ -343,7 +350,7 @@ public class DAGExecutorTest {
     }
 
     @Override
-    public void run(OperatorContext operatorContext) {
+    public void run() {
       throw new UnsupportedOperationException("Failed in purpose.");
     }
   }
@@ -357,7 +364,7 @@ public class DAGExecutorTest {
     }
 
     @Override
-    public void run(OperatorContext operatorContext) {
+    public void run() {
     }
   }
 
@@ -367,7 +374,7 @@ public class DAGExecutorTest {
     }
 
     @Override
-    public void run(OperatorContext operatorContext) {
+    public void run() {
     }
   }
 

@@ -1,7 +1,8 @@
-package com.linkedin.thirdeye.taskexecution.operator;
+package com.linkedin.thirdeye.taskexecution.impl.operator;
 
 import com.google.common.base.Preconditions;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
+import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

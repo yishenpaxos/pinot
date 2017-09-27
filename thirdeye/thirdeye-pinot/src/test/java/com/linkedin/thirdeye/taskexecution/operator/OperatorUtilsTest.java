@@ -1,6 +1,8 @@
 package com.linkedin.thirdeye.taskexecution.operator;
 
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
+import com.linkedin.thirdeye.taskexecution.impl.operator.AbstractOperator;
+import com.linkedin.thirdeye.taskexecution.impl.operator.OperatorUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -28,7 +30,7 @@ public class OperatorUtilsTest {
     }
 
     @Override
-    public void run(OperatorContext operatorContext) {
+    public void run() {
     }
   }
 
@@ -42,7 +44,7 @@ public class OperatorUtilsTest {
     }
 
     @Override
-    public void run(OperatorContext operatorContext) {
+    public void run() {
     }
   }
 

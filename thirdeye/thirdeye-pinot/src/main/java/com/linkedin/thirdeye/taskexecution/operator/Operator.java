@@ -6,10 +6,12 @@ public interface Operator {
 
   NodeIdentifier getNodeIdentifier();
 
+  OperatorConfig newOperatorConfigInstance();
+
   void initializeIOPorts();
 
   void initialize(OperatorConfig operatorConfig);
 
-  void run(OperatorContext operatorContext);
+  void run();
 
 }
