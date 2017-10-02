@@ -1,23 +1,22 @@
 package com.linkedin.thirdeye.taskpipeline;
 
-import com.linkedin.thirdeye.anomaly.utils.AnomalyUtils;
 import com.linkedin.thirdeye.anomalydetection.context.AnomalyFeedback;
 import com.linkedin.thirdeye.anomalydetection.context.AnomalyResult;
 import com.linkedin.thirdeye.api.DimensionMap;
 import com.linkedin.thirdeye.dataframe.DataFrame;
+import com.linkedin.thirdeye.datalayer.dto.MergedAnomalyResultDTO;
+import com.linkedin.thirdeye.detector.function.AnomalyFunction;
 import com.linkedin.thirdeye.taskexecution.dag.DAG;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
-import com.linkedin.thirdeye.taskexecution.executor.ExecutionEngine;
-import com.linkedin.thirdeye.taskexecution.impl.executor.DefaultDAGExecutor;
 import com.linkedin.thirdeye.taskexecution.executor.DAGConfig;
 import com.linkedin.thirdeye.taskexecution.executor.NodeConfig;
-import com.linkedin.thirdeye.taskexecution.impl.executor.DefaultExecutionEngine;
-import com.linkedin.thirdeye.taskexecution.impl.physicaldag.PhysicalDAGBuilder;
+import com.linkedin.thirdeye.taskexecution.impl.executor.SystemContext;
 import com.linkedin.thirdeye.taskexecution.impl.operator.BaseOperatorConfig;
 import com.linkedin.thirdeye.taskexecution.impl.operator.Operator0x1;
 import com.linkedin.thirdeye.taskexecution.impl.operator.Operator1x1;
 import com.linkedin.thirdeye.taskexecution.impl.operator.Operator2x1;
+import com.linkedin.thirdeye.taskexecution.impl.physicaldag.PhysicalDAGBuilder;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,8 +24,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import org.apache.commons.configuration.Configuration;
+import org.joda.time.Interval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,8 +41,9 @@ public class AnomalyDetectionPipelinePrototype {
    * Returns the following DAG:
    *
    * TimeSeriesFetcher ---> AnomalyDetectionOperator --> AnomalyMerger --> TimeSeriesFetcher --> AnomalyUpdater
+   *                    ^                                              \                      ^
    *                   /                                                \                    /
-   * AnomalyFetcher --/                                                  \ AnomalyFetcher --/
+   * AnomalyFetcher --/                                                  \- AnomalyFetcher -/
    */
   public static DAG getDAG() {
     PhysicalDAGBuilder dagBuilder = new PhysicalDAGBuilder();
@@ -59,35 +59,19 @@ public class AnomalyDetectionPipelinePrototype {
     AnomalyMerger merger = dagBuilder.addOperator(new NodeIdentifier("Merger"), AnomalyMerger.class);
 
     dagBuilder.addChannels(timeSeriesFetcher, anomalyFetcher, detectionOperator);
-    dagBuilder.addChannel(timeSeriesFetcher.getOutputPort(), detectionOperator.getInputPort1());
     dagBuilder.addChannel(detectionOperator, merger);
+
 
     return dagBuilder.build();
   }
 
-  private static DAGConfig getDagConfig() {
+  public static DAGConfig getDagConfig() {
     DAGConfig dagConfig = new DAGConfig();
 
     NodeConfig timeSeriesFetcherNodeConfig = new NodeConfig();
     dagConfig.putNodeConfig(new NodeIdentifier("TimeSeriesFetcher"), timeSeriesFetcherNodeConfig);
 
     return dagConfig;
-  }
-
-  public static void main(String[] args) {
-    ExecutorService executorService = Executors.newFixedThreadPool(10);
-    ExecutionEngine executionEngine = new DefaultExecutionEngine(executorService);
-    DefaultDAGExecutor executor = new DefaultDAGExecutor(executionEngine);
-
-    DAG anomalyDetectionPipeline = AnomalyDetectionPipelinePrototype.getDAG();
-    executor.execute(anomalyDetectionPipeline, new DAGConfig());
-
-    AnomalyUtils.safelyShutdownExecutionService(executorService, 30, AnomalyDetectionPipelinePrototype.class);
-  }
-
-  public static class TimeSeriesFetcherConfig extends BaseOperatorConfig {
-    public long startTime;
-    public long endTime;
   }
 
   /**
@@ -131,6 +115,16 @@ public class AnomalyDetectionPipelinePrototype {
           dataFrame.toString());
       getOutputPort().getWriter().write(dataFrame);
     }
+
+    public static class TimeSeriesFetcherConfig extends BaseOperatorConfig {
+      List<Interval> dataRanges = Collections.emptyList();
+
+      @Override
+      public void initialize(Configuration operatorRawConfig, SystemContext systemContext) {
+        super.initialize(operatorRawConfig, systemContext);
+
+      }
+    }
   }
 
   /**
@@ -149,10 +143,10 @@ public class AnomalyDetectionPipelinePrototype {
 
       Map<DimensionMap, List<AnomalyResult>> oldAnomalies = new HashMap<>();
       // Create US anomalies
-      AnomalyResult USAnomaly1 = new DummyAnomaly();
+      AnomalyResult USAnomaly1 = new MergedAnomalyResultDTO();
       USAnomaly1.setStartTime(1);
       USAnomaly1.setEndTime(2);
-      AnomalyResult USAnomaly2 = new DummyAnomaly();
+      AnomalyResult USAnomaly2 = new MergedAnomalyResultDTO();
       USAnomaly2.setStartTime(3);
       USAnomaly2.setEndTime(4);
       DimensionMap dimensionMapUS = new DimensionMap();
@@ -160,10 +154,10 @@ public class AnomalyDetectionPipelinePrototype {
       oldAnomalies.put(dimensionMapUS, new ArrayList<>(Arrays.asList(USAnomaly1, USAnomaly2)));
 
       // Create IN anomalies
-      AnomalyResult INAnomaly1 = new DummyAnomaly();
+      AnomalyResult INAnomaly1 = new MergedAnomalyResultDTO();
       INAnomaly1.setStartTime(2);
       INAnomaly1.setEndTime(3);
-      AnomalyResult INAnomaly2 = new DummyAnomaly();
+      AnomalyResult INAnomaly2 = new MergedAnomalyResultDTO();
       INAnomaly2.setStartTime(4);
       INAnomaly2.setEndTime(6);
       DimensionMap dimensionMapIN = new DimensionMap();
@@ -206,10 +200,10 @@ public class AnomalyDetectionPipelinePrototype {
 
       Map<DimensionMap, List<AnomalyResult>> newAnomalies = new HashMap<>();
       // Create US anomalies
-      AnomalyResult USAnomaly1 = new DummyAnomaly();
+      AnomalyResult USAnomaly1 = new MergedAnomalyResultDTO();
       USAnomaly1.setStartTime(10);
       USAnomaly1.setEndTime(11);
-      AnomalyResult USAnomaly2 = new DummyAnomaly();
+      AnomalyResult USAnomaly2 = new MergedAnomalyResultDTO();
       USAnomaly2.setStartTime(13);
       USAnomaly2.setEndTime(14);
       DimensionMap dimensionMapUS = new DimensionMap();
@@ -217,10 +211,10 @@ public class AnomalyDetectionPipelinePrototype {
       newAnomalies.put(dimensionMapUS, new ArrayList<>(Arrays.asList(USAnomaly1, USAnomaly2)));
 
       // Create IN anomalies
-      AnomalyResult INAnomaly1 = new DummyAnomaly();
+      AnomalyResult INAnomaly1 = new MergedAnomalyResultDTO();
       INAnomaly1.setStartTime(12);
       INAnomaly1.setEndTime(13);
-      AnomalyResult INAnomaly2 = new DummyAnomaly();
+      AnomalyResult INAnomaly2 = new MergedAnomalyResultDTO();
       INAnomaly2.setStartTime(14);
       INAnomaly2.setEndTime(16);
       DimensionMap dimensionMapIN = new DimensionMap();
@@ -255,7 +249,7 @@ public class AnomalyDetectionPipelinePrototype {
 
       Map<DimensionMap, List<AnomalyResult>> mergedAnomalies = new HashMap<>();
       // Create US anomalies
-      AnomalyResult USAnomaly1 = new DummyAnomaly();
+      AnomalyResult USAnomaly1 = new MergedAnomalyResultDTO();
       USAnomaly1.setStartTime(10);
       USAnomaly1.setEndTime(13);
       DimensionMap dimensionMapUS = new DimensionMap();
@@ -263,7 +257,7 @@ public class AnomalyDetectionPipelinePrototype {
       mergedAnomalies.put(dimensionMapUS, new ArrayList<>(Collections.singletonList(USAnomaly1)));
 
       // Create IN anomalies
-      AnomalyResult INAnomaly1 = new DummyAnomaly();
+      AnomalyResult INAnomaly1 = new MergedAnomalyResultDTO();
       INAnomaly1.setStartTime(12);
       INAnomaly1.setEndTime(16);
       DimensionMap dimensionMapIN = new DimensionMap();
@@ -274,94 +268,6 @@ public class AnomalyDetectionPipelinePrototype {
       getOutputPort().getWriter().write(mergedAnomalies);
     }
   }
-
-  /**
-   * Dummy Anomaly class
-   */
-  public static class DummyAnomaly implements AnomalyResult {
-    long startTime;
-    long endTime;
-
-    @Override
-    public void setStartTime(long startTime) {
-      this.startTime = startTime;
-    }
-
-    @Override
-    public long getStartTime() {
-      return startTime;
-    }
-
-    @Override
-    public void setEndTime(long endTime) {
-      this.endTime = endTime;
-    }
-
-    @Override
-    public long getEndTime() {
-      return endTime;
-    }
-
-    @Override
-    public void setScore(double score) {
-    }
-
-    @Override
-    public double getScore() {
-      return 0;
-    }
-
-    @Override
-    public void setWeight(double weight) {
-    }
-
-    @Override
-    public double getWeight() {
-      return 0;
-    }
-
-    @Override
-    public void setAvgCurrentVal(double avgCurrentVal) {
-    }
-
-    @Override
-    public double getAvgCurrentVal() {
-      return 0;
-    }
-
-    @Override
-    public void setAvgBaselineVal(double avgBaselineVal) {
-    }
-
-    @Override
-    public double getAvgBaselineVal() {
-      return 0;
-    }
-
-    @Override
-    public void setFeedback(AnomalyFeedback anomalyFeedback) {
-    }
-
-    @Override
-    public AnomalyFeedback getFeedback() {
-      return null;
-    }
-
-    @Override
-    public void setProperties(Map<String, String> properties) {
-    }
-
-    @Override
-    public Map<String, String> getProperties() {
-      return null;
-    }
-
-    @Override
-    public String toString() {
-      return "[startTime:" + startTime + ", endTime:" + endTime + "]";
-    }
-  }
-
 }
 
 

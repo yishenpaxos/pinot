@@ -4,7 +4,7 @@ import com.linkedin.thirdeye.taskexecution.impl.executor.SystemContext;
 import org.apache.commons.configuration.Configuration;
 
 public interface OperatorConfig {
-  void initialize(Configuration configuration, SystemContext systemContext);
+  void initialize(Configuration operatorRawConfig, SystemContext systemContext);
 
   Configuration getRawConfiguration();
 }

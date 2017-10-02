@@ -65,7 +65,8 @@ public class OperatorRunner implements Callable<ExecutionResult> {
     }
   }
 
-  static OperatorConfig initializeOperatorConfigFromNodeConfig(Operator operator, NodeConfig nodeConfig, SystemContext systemContext) {
+  private static OperatorConfig initializeOperatorConfigFromNodeConfig(Operator operator, NodeConfig nodeConfig,
+      SystemContext systemContext) {
     OperatorConfig operatorConfig = operator.newOperatorConfigInstance();
     operatorConfig.initialize(nodeConfig.getRawOperatorConfig(), systemContext);
     return operatorConfig;

@@ -9,17 +9,17 @@ import org.apache.commons.configuration.MapConfiguration;
 
 public abstract class BaseOperatorConfig implements OperatorConfig {
   private static final Configuration EMPTY_CONFIG = new MapConfiguration(Collections.emptyMap());
-  private Configuration configuration = EMPTY_CONFIG;
+  private Configuration nodeRawConfig = EMPTY_CONFIG;
 
   @Override
-  public void initialize(Configuration configuration, SystemContext systemContext) {
-    Preconditions.checkNotNull(configuration);
-    this.configuration = configuration;
+  public void initialize(Configuration operatorRawConfig, SystemContext systemContext) {
+    Preconditions.checkNotNull(operatorRawConfig);
+    this.nodeRawConfig = operatorRawConfig;
 
     // TODO: Use Java Reflection to map fields in configuration to fields in the Config instance
   }
 
   public Configuration getRawConfiguration() {
-    return configuration;
+    return nodeRawConfig;
   }
 }
