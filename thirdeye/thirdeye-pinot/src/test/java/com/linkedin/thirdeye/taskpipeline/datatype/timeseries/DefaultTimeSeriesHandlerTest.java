@@ -10,6 +10,7 @@ import com.linkedin.thirdeye.constant.MetricAggFunction;
 import com.linkedin.thirdeye.dataframe.DataFrame;
 import com.linkedin.thirdeye.dataframe.DoubleSeries;
 import com.linkedin.thirdeye.dataframe.Series;
+import com.linkedin.thirdeye.dataframe.util.DataFrameUtils;
 import com.linkedin.thirdeye.datalayer.bao.AbstractManagerTestBase;
 import com.linkedin.thirdeye.datalayer.dto.DatasetConfigDTO;
 import com.linkedin.thirdeye.datalayer.dto.MetricConfigDTO;
@@ -45,6 +46,8 @@ import org.testng.annotations.Test;
 public class DefaultTimeSeriesHandlerTest extends AbstractManagerTestBase {
   private ThirdEyeCacheRegistry cacheRegistry = ThirdEyeCacheRegistry.getInstance();
 
+  private static final String DATA_SOURCE_NAME = PinotThirdEyeDataSource.class.getSimpleName();
+
   private static final String DATASET_NAME = "dataset";
   private static final String METRIC_ID1_NAME = "one";
   private static final String METRIC_ID2_NAME = "two";
@@ -53,7 +56,14 @@ public class DefaultTimeSeriesHandlerTest extends AbstractManagerTestBase {
 
   private static final String TIME_COLUMN_NAME = "timestamp";
 
-  private static final String DATA_SOURCE_NAME = PinotThirdEyeDataSource.class.getSimpleName();
+  private static final String DIMENSION_ONE = "country";
+  private static final String COUNTRY_ONE = "US";
+  private static final String COUNTRY_TWO = "IN";
+  private static final String COUNTRY_THREE = "CN";
+
+  private static final String DIMENSION_TWO = "os";
+  private static final String OS_ONE = "iOS";
+  private static final String OS_TWO = "Android";
 
   @BeforeClass
   void beforeClass() throws Exception {
@@ -193,10 +203,10 @@ public class DefaultTimeSeriesHandlerTest extends AbstractManagerTestBase {
     requestBuilder.setStartTime(new DateTime(0));
     requestBuilder.setEndTime(new DateTime(9));
     Multimap<String, String> filter = ArrayListMultimap.create();
-    filter.putAll("country", Arrays.asList("US", "IN"));
-    filter.putAll("os", Arrays.asList("iOS", "Android"));
+    filter.putAll(DIMENSION_ONE, Arrays.asList(COUNTRY_ONE, COUNTRY_TWO, COUNTRY_THREE));
+    filter.putAll(DIMENSION_TWO, Arrays.asList(OS_ONE, OS_TWO));
     requestBuilder.setFilter(filter);
-    requestBuilder.setGroupByDimensionKeys(Arrays.asList("country", "os"));
+    requestBuilder.setGroupByDimensionKeys(getGroupByDimensionNames());
     requestBuilder.setGranularity(new TimeGranularity(5, TimeUnit.MINUTES));
 
     return requestBuilder.build();
@@ -205,19 +215,23 @@ public class DefaultTimeSeriesHandlerTest extends AbstractManagerTestBase {
   private DataFrame buildExpectedDataFrame() {
     DataFrame dataFrame = new DataFrame();
 
-    dataFrame.addSeries(TIME_COLUMN_NAME, 0L, 0L, 0L, 1L, 1L, 1L, 2L, 2L, 2L);
-    dataFrame.addSeries("country", "US", "IN", "CN", "US", "IN", "CN", "US", "IN", "CN");
-    dataFrame.addSeries("os", "iOS", "Android", "Windows", "iOS", "Android", "Windows", "iOS", "Android", "Windows");
-    dataFrame.addSeries("SUM_id2", 100.0, 2.0, 3.0, 100.1, 2.01, 3.01, 100.2, 2.001, 3.001);
-    dataFrame.addSeries("SUM_id1", 101.0, 2.1, 3.1, 101.1, 2.02, 3.02, 101.2, 2.002, 3.002);
-    Series sum_id1 = dataFrame.getSeries().get("SUM_id1");
-    Series sum_id2 = dataFrame.getSeries().get("SUM_id2");
+    final String atomicMetric1 = "SUM_id1";
+    final String atomicMetric2 = "SUM_id2";
+
+    dataFrame.addSeries(TIME_COLUMN_NAME, 0L, 0L, 1L, 1L, 2L, 2L, 0L, 0L, 1L, 1L, 2L, 2L, 0L, 0L, 1L, 1L, 2L, 2L);
+    dataFrame.addSeries(DIMENSION_ONE, COUNTRY_ONE, COUNTRY_ONE, COUNTRY_ONE, COUNTRY_ONE, COUNTRY_ONE, COUNTRY_ONE, COUNTRY_TWO, COUNTRY_TWO, COUNTRY_TWO, COUNTRY_TWO, COUNTRY_TWO, COUNTRY_TWO, COUNTRY_THREE, COUNTRY_THREE, COUNTRY_THREE, COUNTRY_THREE, COUNTRY_THREE, COUNTRY_THREE);
+    dataFrame.addSeries(DIMENSION_TWO, OS_ONE, OS_TWO, OS_ONE, OS_TWO, OS_ONE, OS_TWO, OS_ONE, OS_TWO, OS_ONE, OS_TWO, OS_ONE, OS_TWO, OS_ONE, OS_TWO, OS_ONE, OS_TWO, OS_ONE, OS_TWO);
+    dataFrame.addSeries(atomicMetric2, 100d, 200d, 101d, 201d, 102d, 202d, 10d, 20d, 10.1, 20.1, 10.2, 20.2, 1.0, 2.0, 1.01, 2.01, 1.02, 2.02);
+    dataFrame.addSeries(atomicMetric1, 110d, 210d, 111d, 211d, 112d, 212d, 11.0, 21.0, 11.1, 21.1, 11.2, 21.2, 1.10, 2.10, 1.11, 2.11, 1.12, 2.12);
+
+    Series sum_id1 = dataFrame.getSeries().get(atomicMetric1);
+    Series sum_id2 = dataFrame.getSeries().get(atomicMetric2);
     DoubleSeries.Builder builder = DoubleSeries.builder();
     for (int i = 0; i < sum_id1.size(); i++) {
       builder.addValues(sum_id1.getDouble(i) + sum_id2.getDouble(i));
     }
-    dataFrame.addSeries("value", builder.build());
-    dataFrame.sortedBy(TIME_COLUMN_NAME);
+    dataFrame.addSeries(DataFrameUtils.COL_VALUE, builder.build());
+    dataFrame = dataFrame.sortedBy(TIME_COLUMN_NAME);
 
     return dataFrame;
   }
@@ -230,92 +244,50 @@ public class DefaultTimeSeriesHandlerTest extends AbstractManagerTestBase {
 
     List<String> groupKeyColumns = new ArrayList<>();
     groupKeyColumns.add(TIME_COLUMN_NAME);
-    groupKeyColumns.addAll(getDimensionNames());
+    groupKeyColumns.addAll(getGroupByDimensionNames());
     thirdEyeResponse.setGroupKeyColumns(groupKeyColumns);
 
     {
       int timeBucketId = 0;
-      ThirdEyeResponseRow row1 = new ThirdEyeResponseRow(timeBucketId++, getDimensionValueList1(), getMetricT1DV1());
-      ThirdEyeResponseRow row2 = new ThirdEyeResponseRow(timeBucketId++, getDimensionValueList1(), getMetricT2DV1());
-      ThirdEyeResponseRow row3 = new ThirdEyeResponseRow(timeBucketId++, getDimensionValueList1(), getMetricT3DV1());
-      thirdEyeResponse.addRow(row1);
-      thirdEyeResponse.addRow(row2);
-      thirdEyeResponse.addRow(row3);
+      thirdEyeResponse.addRow(new ThirdEyeResponseRow(timeBucketId, Arrays.asList(COUNTRY_ONE, OS_ONE), Arrays.asList(100d, 110d)));
+      thirdEyeResponse.addRow(new ThirdEyeResponseRow(timeBucketId, Arrays.asList(COUNTRY_ONE, OS_TWO), Arrays.asList(200d, 210d)));
+      ++timeBucketId;
+      thirdEyeResponse.addRow(new ThirdEyeResponseRow(timeBucketId, Arrays.asList(COUNTRY_ONE, OS_ONE), Arrays.asList(101d, 111d)));
+      thirdEyeResponse.addRow(new ThirdEyeResponseRow(timeBucketId, Arrays.asList(COUNTRY_ONE, OS_TWO), Arrays.asList(201d, 211d)));
+      ++timeBucketId;
+      thirdEyeResponse.addRow(new ThirdEyeResponseRow(timeBucketId, Arrays.asList(COUNTRY_ONE, OS_ONE), Arrays.asList(102d, 112d)));
+      thirdEyeResponse.addRow(new ThirdEyeResponseRow(timeBucketId, Arrays.asList(COUNTRY_ONE, OS_TWO), Arrays.asList(202d, 212d)));
     }
 
     {
       int timeBucketId = 0;
-      ThirdEyeResponseRow row1 = new ThirdEyeResponseRow(timeBucketId++, getDimensionValueList2(), getMetricT1DV2());
-      ThirdEyeResponseRow row2 = new ThirdEyeResponseRow(timeBucketId++, getDimensionValueList2(), getMetricT2DV2());
-      ThirdEyeResponseRow row3 = new ThirdEyeResponseRow(timeBucketId++, getDimensionValueList2(), getMetricT3DV2());
-      thirdEyeResponse.addRow(row1);
-      thirdEyeResponse.addRow(row2);
-      thirdEyeResponse.addRow(row3);
+      thirdEyeResponse.addRow(new ThirdEyeResponseRow(timeBucketId, Arrays.asList(COUNTRY_TWO, OS_ONE), Arrays.asList(10.0d, 11.0d)));
+      thirdEyeResponse.addRow(new ThirdEyeResponseRow(timeBucketId, Arrays.asList(COUNTRY_TWO, OS_TWO), Arrays.asList(20.0d, 21.0d)));
+      ++timeBucketId;
+      thirdEyeResponse.addRow(new ThirdEyeResponseRow(timeBucketId, Arrays.asList(COUNTRY_TWO, OS_ONE), Arrays.asList(10.1d, 11.1d)));
+      thirdEyeResponse.addRow(new ThirdEyeResponseRow(timeBucketId, Arrays.asList(COUNTRY_TWO, OS_TWO), Arrays.asList(20.1d, 21.1d)));
+      ++timeBucketId;
+      thirdEyeResponse.addRow(new ThirdEyeResponseRow(timeBucketId, Arrays.asList(COUNTRY_TWO, OS_ONE), Arrays.asList(10.2d, 11.2d)));
+      thirdEyeResponse.addRow(new ThirdEyeResponseRow(timeBucketId, Arrays.asList(COUNTRY_TWO, OS_TWO), Arrays.asList(20.2d, 21.2d)));
     }
 
     {
       int timeBucketId = 0;
-      ThirdEyeResponseRow row1 = new ThirdEyeResponseRow(timeBucketId++, getDimensionValueList3(), getMetricT1DV3());
-      ThirdEyeResponseRow row2 = new ThirdEyeResponseRow(timeBucketId++, getDimensionValueList3(), getMetricT2DV3());
-      ThirdEyeResponseRow row3 = new ThirdEyeResponseRow(timeBucketId++, getDimensionValueList3(), getMetricT3DV3());
-      thirdEyeResponse.addRow(row1);
-      thirdEyeResponse.addRow(row2);
-      thirdEyeResponse.addRow(row3);
+      thirdEyeResponse.addRow(new ThirdEyeResponseRow(timeBucketId, Arrays.asList(COUNTRY_THREE, OS_ONE), Arrays.asList(1.00d, 1.10d)));
+      thirdEyeResponse.addRow(new ThirdEyeResponseRow(timeBucketId, Arrays.asList(COUNTRY_THREE, OS_TWO), Arrays.asList(2.00d, 2.10d)));
+      ++timeBucketId;
+      thirdEyeResponse.addRow(new ThirdEyeResponseRow(timeBucketId, Arrays.asList(COUNTRY_THREE, OS_ONE), Arrays.asList(1.01d, 1.11d)));
+      thirdEyeResponse.addRow(new ThirdEyeResponseRow(timeBucketId, Arrays.asList(COUNTRY_THREE, OS_TWO), Arrays.asList(2.01d, 2.11d)));
+      ++timeBucketId;
+      thirdEyeResponse.addRow(new ThirdEyeResponseRow(timeBucketId, Arrays.asList(COUNTRY_THREE, OS_ONE), Arrays.asList(1.02d, 1.12d)));
+      thirdEyeResponse.addRow(new ThirdEyeResponseRow(timeBucketId, Arrays.asList(COUNTRY_THREE, OS_TWO), Arrays.asList(2.02d, 2.12d)));
     }
 
     return thirdEyeResponse;
   }
 
-  private static List<Double> getMetricT1DV1() {
-    return Arrays.asList(100d, 101d);
-  }
-
-  private static List<Double> getMetricT2DV1() {
-    return Arrays.asList(100.1, 101.1);
-  }
-
-  private static List<Double> getMetricT3DV1() {
-    return Arrays.asList(100.2, 101.2);
-  }
-
-  private static List<Double> getMetricT1DV2() {
-    return Arrays.asList(2.0d, 2.1d);
-  }
-
-  private static List<Double> getMetricT2DV2() {
-    return Arrays.asList(2.01d, 2.02d);
-  }
-
-  private static List<Double> getMetricT3DV2() {
-    return Arrays.asList(2.001d, 2.002d);
-  }
-
-  private static List<Double> getMetricT1DV3() {
-    return Arrays.asList(3.0d, 3.1d);
-  }
-
-  private static List<Double> getMetricT2DV3() {
-    return Arrays.asList(3.01d, 3.02d);
-  }
-
-  private static List<Double> getMetricT3DV3() {
-    return Arrays.asList(3.001, 3.002);
-  }
-
-  private static List<String> getDimensionNames() {
-    return Arrays.asList("country", "os");
-  }
-
-  private static List<String> getDimensionValueList1() {
-    return Arrays.asList("US", "iOS");
-  }
-
-  private static List<String> getDimensionValueList2() {
-    return Arrays.asList("IN", "Android");
-  }
-
-  private static List<String> getDimensionValueList3() {
-    return Arrays.asList("CN", "Windows");
+  private static List<String> getGroupByDimensionNames() {
+    return Arrays.asList(DIMENSION_ONE, DIMENSION_TWO);
   }
 
   static class MockedThirdEyeResponse implements ThirdEyeResponse {
