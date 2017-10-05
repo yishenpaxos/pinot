@@ -6,6 +6,7 @@ import com.linkedin.thirdeye.taskexecution.executor.DAGConfig;
 import com.linkedin.thirdeye.taskexecution.executor.ExecutionEngine;
 import com.linkedin.thirdeye.taskexecution.impl.executor.DefaultDAGExecutor;
 import com.linkedin.thirdeye.taskexecution.impl.executor.DefaultExecutionEngine;
+import com.linkedin.thirdeye.taskpipeline.anomalydetection.AnomalyDetectionPipelinePrototype;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.testng.annotations.Test;
