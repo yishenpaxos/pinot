@@ -32,6 +32,7 @@ import org.json.JSONObject;
  * <p>- <code>DataType</code>: type of the data stored (e.g. INTEGER, LONG, FLOAT, DOUBLE, STRING).
  * <p>- <code>IsSingleValueField</code>: single-value or multi-value field.
  * <p>- <code>DefaultNullValue</code>: when no value found for this field, use this value. Stored in string format.
+ * <p>- <code>VirtualColumnProvider</code>: the virtual column provider to use for this field.
  */
 public abstract class FieldSpec {
   private static final Integer DEFAULT_DIM_NULL_VALUE_OF_INT = Integer.MIN_VALUE;
@@ -51,6 +52,7 @@ public abstract class FieldSpec {
   private boolean _isSingleValueField = true;
   private String _stringDefaultNullValue;
   private Object _cachedDefaultNullValue;
+  protected String _virtualColumnProvider;
 
   // Default constructor required by JSON de-serializer. DO NOT REMOVE.
   public FieldSpec() {
@@ -98,6 +100,14 @@ public abstract class FieldSpec {
 
   public void setSingleValueField(boolean isSingleValueField) {
     _isSingleValueField = isSingleValueField;
+  }
+
+  public String getVirtualColumnProvider() {
+    return _virtualColumnProvider;
+  }
+
+  public void setVirtualColumnProvider(String virtualColumnProvider) {
+    _virtualColumnProvider = virtualColumnProvider;
   }
 
   @Nonnull

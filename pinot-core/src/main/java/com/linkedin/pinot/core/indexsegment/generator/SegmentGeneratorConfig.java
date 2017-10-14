@@ -316,7 +316,7 @@ public class SegmentGeneratorConfig {
     if (_segmentTimeColumnName != null) {
       return _segmentTimeColumnName;
     }
-    return getQualifyingFields(FieldType.TIME);
+    return getQualifyingFields(FieldType.TIME, true);
   }
 
   public void setTimeColumnName(String timeColumnName) {
@@ -485,7 +485,7 @@ public class SegmentGeneratorConfig {
 
   @JsonIgnore
   public String getMetrics() {
-    return getQualifyingFields(FieldType.METRIC);
+    return getQualifyingFields(FieldType.METRIC, true);
   }
 
   /**
@@ -526,12 +526,12 @@ public class SegmentGeneratorConfig {
 
   @JsonIgnore
   public String getDimensions() {
-    return getQualifyingFields(FieldType.DIMENSION);
+    return getQualifyingFields(FieldType.DIMENSION, true);
   }
 
   @JsonIgnore
   public String getDateTimeColumnNames() {
-    return getQualifyingFields(FieldType.DATE_TIME);
+    return getQualifyingFields(FieldType.DATE_TIME, true);
   }
 
   public void setSegmentPartitionConfig(SegmentPartitionConfig segmentPartitionConfig) {
@@ -548,14 +548,19 @@ public class SegmentGeneratorConfig {
    * @return
    */
   @JsonIgnore
-  private String getQualifyingFields(FieldType type) {
+  private String getQualifyingFields(FieldType type, boolean excludeVirtualColumns) {
     List<String> fields = new ArrayList<>();
 
     for (final FieldSpec spec : getSchema().getAllFieldSpecs()) {
+      if (excludeVirtualColumns && getSchema().isVirtualColumn(spec.getName())) {
+        continue;
+      }
+
       if (spec.getFieldType() == type) {
         fields.add(spec.getName());
       }
     }
+
     Collections.sort(fields);
     return StringUtils.join(fields, ",");
   }

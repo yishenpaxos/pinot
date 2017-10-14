@@ -27,7 +27,7 @@ import com.linkedin.pinot.core.io.reader.SingleColumnMultiValueReader;
 import com.linkedin.pinot.core.io.reader.SingleColumnSingleValueReader;
 import com.linkedin.pinot.core.io.reader.impl.v1.FixedBitMultiValueReader;
 import com.linkedin.pinot.core.io.reader.impl.v1.FixedBitSingleValueReader;
-import com.linkedin.pinot.core.io.reader.impl.v1.SortedIndexReader;
+import com.linkedin.pinot.core.io.reader.impl.v1.SortedIndexReaderImpl;
 import com.linkedin.pinot.core.segment.index.ColumnMetadata;
 import com.linkedin.pinot.core.segment.index.SegmentMetadataImpl;
 import com.linkedin.pinot.core.segment.index.readers.Dictionary;
@@ -104,7 +104,7 @@ public class PinotSegmentRecordReader extends BaseRecordReader {
       if (columnMetadata.isSingleValue()) {
         if (columnMetadata.isSorted()) {
           _singleValueReaderMap.put(columnName,
-              new SortedIndexReader(forwardIndexBuffer, columnMetadata.getCardinality()));
+              new SortedIndexReaderImpl(forwardIndexBuffer, columnMetadata.getCardinality()));
         } else {
           _singleValueReaderMap.put(columnName,
               new FixedBitSingleValueReader(forwardIndexBuffer, _numRows, columnMetadata.getBitsPerElement()));

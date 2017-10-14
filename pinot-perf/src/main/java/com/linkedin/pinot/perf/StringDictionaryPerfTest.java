@@ -26,7 +26,7 @@ import com.linkedin.pinot.core.indexsegment.generator.SegmentGeneratorConfig;
 import com.linkedin.pinot.core.segment.creator.impl.SegmentIndexCreationDriverImpl;
 import com.linkedin.pinot.core.segment.index.IndexSegmentImpl;
 import com.linkedin.pinot.core.segment.index.loader.Loaders;
-import com.linkedin.pinot.core.segment.index.readers.ImmutableDictionaryReader;
+import com.linkedin.pinot.core.segment.index.readers.Dictionary;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -119,7 +119,7 @@ public class StringDictionaryPerfTest {
   public void perfTestLookups(int numLookups)
       throws Exception {
     IndexSegmentImpl segment = (IndexSegmentImpl) Loaders.IndexSegment.load(_indexDir, ReadMode.heap);
-    ImmutableDictionaryReader dictionary = segment.getDictionaryFor(COLUMN_NAME);
+    Dictionary dictionary = segment.getDictionaryFor(COLUMN_NAME);
 
     Random random = new Random(System.nanoTime());
     long start = System.currentTimeMillis();

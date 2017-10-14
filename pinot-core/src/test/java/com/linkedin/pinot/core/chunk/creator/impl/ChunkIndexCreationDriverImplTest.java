@@ -32,7 +32,7 @@ import com.linkedin.pinot.core.segment.creator.impl.SegmentCreationDriverFactory
 import com.linkedin.pinot.core.segment.index.IndexSegmentImpl;
 import com.linkedin.pinot.core.segment.index.SegmentMetadataImpl;
 import com.linkedin.pinot.core.segment.index.loader.Loaders;
-import com.linkedin.pinot.core.segment.index.readers.ImmutableDictionaryReader;
+import com.linkedin.pinot.core.segment.index.readers.Dictionary;
 import com.linkedin.pinot.segments.v1.creator.SegmentTestUtils;
 import com.linkedin.pinot.util.TestUtils;
 import java.io.File;
@@ -124,7 +124,7 @@ public class ChunkIndexCreationDriverImplTest {
   public void test4() throws Exception {
     final IndexSegmentImpl segment =
         (IndexSegmentImpl) Loaders.IndexSegment.load(INDEX_DIR.listFiles()[0], ReadMode.mmap);
-    final ImmutableDictionaryReader d = segment.getDictionaryFor("column1");
+    final Dictionary d = segment.getDictionaryFor("column1");
 
     final List<String> rhs = new ArrayList<String>();
     rhs.add(d.get(new Random().nextInt(d.length())).toString());
@@ -175,7 +175,7 @@ public class ChunkIndexCreationDriverImplTest {
   public void test6() throws Exception {
     final IndexSegmentImpl segment =
         (IndexSegmentImpl) Loaders.IndexSegment.load(INDEX_DIR.listFiles()[0], ReadMode.mmap);
-    final ImmutableDictionaryReader d = segment.getDictionaryFor("column7");
+    final Dictionary d = segment.getDictionaryFor("column7");
 
     final List<String> rhs = new ArrayList<String>();
     rhs.add(d.get(new Random().nextInt(d.length())).toString());

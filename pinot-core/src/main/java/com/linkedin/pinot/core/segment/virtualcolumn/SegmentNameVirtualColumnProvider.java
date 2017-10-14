@@ -13,21 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.linkedin.pinot.core.segment.index.column;
 
-import com.linkedin.pinot.core.io.reader.DataFileReader;
-import com.linkedin.pinot.core.segment.index.readers.Dictionary;
-import com.linkedin.pinot.core.segment.index.readers.InvertedIndexReader;
-
+package com.linkedin.pinot.core.segment.virtualcolumn;
 
 /**
- * Column index container interface, which contains the interface exposed by physical (backed by an on-disk
- * representation) and virtual columns (backed by a pluggable provider).
+ * Virtual column provider that contains the current segment name.
  */
-public interface ColumnIndexContainer {
-  DataFileReader getForwardIndex();
-
-  InvertedIndexReader getInvertedIndex();
-
-  Dictionary getDictionary();
+public class SegmentNameVirtualColumnProvider extends SingleStringVirtualColumnProvider {
+  @Override
+  protected String getValue(VirtualColumnContext context) {
+    return context.getSegmentName();
+  }
 }

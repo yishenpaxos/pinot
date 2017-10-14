@@ -39,6 +39,7 @@ public class OfflineTableDataManager extends AbstractTableDataManager {
   @Override
   public void addSegment(@Nonnull File indexDir, @Nonnull IndexLoadingConfig indexLoadingConfig) throws Exception {
     Schema schema = ZKMetadataProvider.getTableSchema(_propertyStore, _tableName);
+    addBuiltInVirtualColumnsToSchema(schema);
     addSegment(ColumnarSegmentLoader.load(indexDir, indexLoadingConfig, schema));
   }
 }

@@ -16,17 +16,23 @@
 package com.linkedin.pinot.core.segment.index.loader;
 
 import com.google.common.base.Preconditions;
+import com.linkedin.pinot.common.data.FieldSpec;
 import com.linkedin.pinot.common.data.Schema;
 import com.linkedin.pinot.common.segment.ReadMode;
+import com.linkedin.pinot.common.utils.NetUtil;
 import com.linkedin.pinot.core.indexsegment.generator.SegmentVersion;
 import com.linkedin.pinot.core.segment.index.ColumnMetadata;
 import com.linkedin.pinot.core.segment.index.IndexSegmentImpl;
 import com.linkedin.pinot.core.segment.index.SegmentMetadataImpl;
 import com.linkedin.pinot.core.segment.index.column.ColumnIndexContainer;
+import com.linkedin.pinot.core.segment.index.column.PhysicalColumnIndexContainer;
 import com.linkedin.pinot.core.segment.index.converter.SegmentFormatConverter;
 import com.linkedin.pinot.core.segment.index.converter.SegmentFormatConverterFactory;
 import com.linkedin.pinot.core.segment.store.SegmentDirectory;
 import com.linkedin.pinot.core.segment.store.SegmentDirectoryPaths;
+import com.linkedin.pinot.core.segment.virtualcolumn.VirtualColumnContext;
+import com.linkedin.pinot.core.segment.virtualcolumn.VirtualColumnProvider;
+import com.linkedin.pinot.core.segment.virtualcolumn.VirtualColumnProviderFactory;
 import com.linkedin.pinot.core.startree.StarTreeInterf;
 import com.linkedin.pinot.core.startree.StarTreeSerDe;
 import java.io.File;
@@ -106,7 +112,7 @@ public class Loaders {
       Map<String, ColumnIndexContainer> indexContainerMap = new HashMap<>();
       for (Map.Entry<String, ColumnMetadata> entry : segmentMetadata.getColumnMetadataMap().entrySet()) {
         indexContainerMap.put(entry.getKey(),
-            new ColumnIndexContainer(segmentReader, entry.getValue(), indexLoadingConfig));
+            new PhysicalColumnIndexContainer(segmentReader, entry.getValue(), indexLoadingConfig));
       }
 
       // Load star tree index if it exists
@@ -114,6 +120,27 @@ public class Loaders {
       if (segmentReader.hasStarTree()) {
         LOGGER.info("Loading star tree for segment: {}", segmentName);
         starTree = StarTreeSerDe.fromFile(segmentReader.getStarTreeFile(), readMode);
+      }
+
+      // Synthesize schema if necessary, adding virtual columns
+      if (schema == null) {
+        schema = segmentMetadata.getSchema();
+        VirtualColumnProviderFactory.addBuiltInVirtualColumnsToSchema(schema);
+      }
+
+      // Instantiate virtual columns
+      for (String columnName : schema.getColumnNames()) {
+        if (schema.isVirtualColumn(columnName)) {
+          FieldSpec fieldSpec = schema.getFieldSpecFor(columnName);
+
+          VirtualColumnProvider provider = VirtualColumnProviderFactory.buildProvider(fieldSpec.getVirtualColumnProvider());
+          VirtualColumnContext context =
+              new VirtualColumnContext(NetUtil.getHostnameOrAddress(), segmentMetadata.getTableName(), segmentName,
+                  columnName, segmentMetadata.getTotalDocs());
+          indexContainerMap.put(columnName, provider.buildColumnIndexContainer(
+              context));
+          segmentMetadata.getColumnMetadataMap().put(columnName, provider.buildMetadata(context));
+        }
       }
 
       return new IndexSegmentImpl(segmentDirectory, segmentMetadata, indexContainerMap, starTree);

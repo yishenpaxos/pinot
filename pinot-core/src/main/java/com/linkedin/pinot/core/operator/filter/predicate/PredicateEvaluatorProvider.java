@@ -48,12 +48,12 @@ public class PredicateEvaluatorProvider {
           case NOT_IN:
             return NotInPredicateEvaluatorFactory.newDictionaryBasedEvaluator((NotInPredicate) predicate, dictionary);
           case RANGE:
-            if (dictionary instanceof ImmutableDictionaryReader) {
-              return RangePredicateEvaluatorFactory.newOfflineDictionaryBasedEvaluator((RangePredicate) predicate,
-                  (ImmutableDictionaryReader) dictionary);
-            } else {
+            if (dictionary instanceof MutableDictionary) {
               return RangePredicateEvaluatorFactory.newRealtimeDictionaryBasedEvaluator((RangePredicate) predicate,
                   (MutableDictionary) dictionary);
+            } else {
+              return RangePredicateEvaluatorFactory.newOfflineDictionaryBasedEvaluator((RangePredicate) predicate,
+                  dictionary);
             }
           case REGEXP_LIKE:
             return RegexpLikePredicateEvaluatorFactory.newDictionaryBasedEvaluator((RegexpLikePredicate) predicate,

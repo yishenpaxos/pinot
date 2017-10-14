@@ -23,6 +23,7 @@ import com.linkedin.pinot.common.metadata.segment.RealtimeSegmentZKMetadata;
 import com.linkedin.pinot.common.metrics.ServerMeter;
 import com.linkedin.pinot.common.metrics.ServerMetrics;
 import com.linkedin.pinot.common.segment.SegmentMetadata;
+import com.linkedin.pinot.common.utils.NetUtil;
 import com.linkedin.pinot.core.data.GenericRow;
 import com.linkedin.pinot.core.data.manager.realtime.RealtimeSegmentDataManager;
 import com.linkedin.pinot.core.data.readers.RecordReader;
@@ -38,12 +39,18 @@ import com.linkedin.pinot.core.realtime.impl.invertedindex.RealtimeInvertedIndex
 import com.linkedin.pinot.core.segment.index.SegmentMetadataImpl;
 import com.linkedin.pinot.core.segment.index.data.source.ColumnDataSource;
 import com.linkedin.pinot.core.segment.index.loader.IndexLoadingConfig;
+import com.linkedin.pinot.core.segment.virtualcolumn.VirtualColumnContext;
+import com.linkedin.pinot.core.segment.virtualcolumn.VirtualColumnProvider;
+import com.linkedin.pinot.core.segment.virtualcolumn.VirtualColumnProviderFactory;
 import com.linkedin.pinot.core.startree.StarTree;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -374,15 +381,41 @@ public class RealtimeSegmentImpl implements RealtimeSegment {
 
   @Override
   public ColumnDataSource getDataSource(String columnName) {
+    if (dataSchema.isVirtualColumn(columnName)) {
+      return getVirtualDataSource(columnName);
+    }
+
     // Because document id searchable offset is inclusive, number of documents is 1 larger than it
     return new ColumnDataSource(dataSchema.getFieldSpecFor(columnName), docIdSearchableOffset + 1,
         maxNumberOfMultivaluesMap.get(columnName), columnIndexReaderWriterMap.get(columnName),
         invertedIndexMap.get(columnName), dictionaryMap.get(columnName));
   }
 
+  private ColumnDataSource getVirtualDataSource(String column) {
+    VirtualColumnContext virtualColumnContext = new VirtualColumnContext(NetUtil.getHostnameOrAddress(), _segmentMetadata.getTableName(), getSegmentName(),
+        column, docIdSearchableOffset + 1);
+
+    VirtualColumnProvider provider = VirtualColumnProviderFactory.buildProvider(dataSchema.getFieldSpecFor(column).getVirtualColumnProvider());
+
+    return new ColumnDataSource(provider.buildColumnIndexContainer(virtualColumnContext), provider.buildMetadata(virtualColumnContext));
+  }
+
   @Override
   public String[] getColumnNames() {
     return dataSchema.getColumnNames().toArray(new String[0]);
+  }
+
+  public String[] getPhysicalColumnNames() {
+    Collection<String> physicalColumnNames = new LinkedList<>(dataSchema.getColumnNames());
+
+    for (Iterator<String> iterator = physicalColumnNames.iterator(); iterator.hasNext(); ) {
+      String columnName = iterator.next();
+      if (dataSchema.isVirtualColumn(columnName)) {
+        iterator.remove();
+      }
+    }
+
+    return physicalColumnNames.toArray(new String[0]);
   }
 
   @Override

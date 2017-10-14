@@ -88,7 +88,17 @@ public class SelectionOperatorUtils {
   public static List<String> getSelectionColumns(@Nonnull List<String> selectionColumns,
       @Nonnull IndexSegment indexSegment) {
     if (selectionColumns.size() == 1 && selectionColumns.get(0).equals("*")) {
-      List<String> allColumns = Arrays.asList(indexSegment.getColumnNames());
+      String[] columnNames = indexSegment.getColumnNames();
+      List<String> allColumns = new ArrayList<>(columnNames.length);
+
+      // Remove columns that start with $ (eg. $docId) when doing select *
+      for (int i = 0; i < columnNames.length; i++) {
+        String columnName = columnNames[i];
+        if (!columnName.startsWith("$")) {
+          allColumns.add(columnName);
+        }
+      }
+
       Collections.sort(allColumns);
       return allColumns;
     } else {

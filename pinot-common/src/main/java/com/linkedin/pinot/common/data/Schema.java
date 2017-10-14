@@ -582,4 +582,9 @@ public final class Schema {
     return EqualityUtils.hashCodeOf(_schemaName.hashCode(), _fieldSpecMap);
   }
 
+  public boolean isVirtualColumn(String columnName) {
+    return columnName.startsWith("$") ||
+        (getFieldSpecFor(columnName).getVirtualColumnProvider() != null &&
+            !getFieldSpecFor(columnName).getVirtualColumnProvider().isEmpty());
+  }
 }

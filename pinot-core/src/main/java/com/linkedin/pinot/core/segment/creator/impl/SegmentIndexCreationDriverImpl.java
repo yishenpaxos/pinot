@@ -571,6 +571,12 @@ public class SegmentIndexCreationDriverImpl implements SegmentIndexCreationDrive
       throws Exception {
     for (FieldSpec spec : dataSchema.getAllFieldSpecs()) {
       String column = spec.getName();
+
+      // Skip adding virtual columns, so that they don't get an on-disk representation
+      if (dataSchema.isVirtualColumn(column)) {
+        continue;
+      }
+
       indexCreationInfoMap.put(column,
           new ColumnIndexCreationInfo(true/*createDictionary*/, segmentStats.getColumnProfileFor(column).getMinValue(),
               segmentStats.getColumnProfileFor(column).getMaxValue(),

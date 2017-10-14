@@ -55,7 +55,7 @@ public class IndexSegmentImpl implements IndexSegment {
     LOGGER.info("Successfully loaded the index segment : " + segmentDirectory);
   }
 
-  public ImmutableDictionaryReader getDictionaryFor(String column) {
+  public Dictionary getDictionaryFor(String column) {
     return indexContainerMap.get(column).getDictionary();
   }
 
@@ -108,7 +108,7 @@ public class IndexSegmentImpl implements IndexSegment {
       ColumnIndexContainer columnIndexContainer = indexContainerMap.get(column);
 
       try {
-        ImmutableDictionaryReader dictionary = columnIndexContainer.getDictionary();
+        Dictionary dictionary = columnIndexContainer.getDictionary();
         if (dictionary != null) {
           dictionary.close();
         }

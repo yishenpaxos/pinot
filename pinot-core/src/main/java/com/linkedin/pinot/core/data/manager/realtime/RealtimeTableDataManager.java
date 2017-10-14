@@ -19,6 +19,7 @@ import com.google.common.base.Preconditions;
 import com.linkedin.pinot.common.Utils;
 import com.linkedin.pinot.common.config.IndexingConfig;
 import com.linkedin.pinot.common.config.TableConfig;
+import com.linkedin.pinot.common.config.TableNameBuilder;
 import com.linkedin.pinot.common.data.FieldSpec;
 import com.linkedin.pinot.common.data.Schema;
 import com.linkedin.pinot.common.metadata.ZKMetadataProvider;
@@ -141,6 +142,20 @@ public class RealtimeTableDataManager extends AbstractTableDataManager {
     // segment backup directory existed), need to first try to recover from reload failure before checking the existence
     // of the index directory and loading segment from it
     LoaderUtils.reloadFailureRecovery(indexDir);
+
+    Schema schema =
+        ZKMetadataProvider.getTableSchema(_propertyStore, TableNameBuilder.REALTIME.tableNameWithType(_tableName));
+
+    Preconditions.checkNotNull(schema);
+    addBuiltInVirtualColumnsToSchema(schema);
+
+    if (!isValid(schema, tableConfig.getIndexingConfig())) {
+      _logger.error("Not adding segment {}", segmentName);
+      throw new RuntimeException("Mismatching schema/table config for " + _tableName);
+    }
+
+    InstanceZKMetadata instanceZKMetadata = ZKMetadataProvider.getInstanceZKMetadata(_propertyStore, _instanceId);
+
     if (indexDir.exists() && (realtimeSegmentZKMetadata.getStatus() == Status.DONE)) {
       // segment already exists on file, and we have committed the realtime segment in ZK. Treat it like an offline segment
       if (_segmentsMap.containsKey(segmentName)) {
@@ -149,7 +164,7 @@ public class RealtimeTableDataManager extends AbstractTableDataManager {
         return;
       }
 
-      IndexSegment segment = ColumnarSegmentLoader.load(indexDir, indexLoadingConfig);
+      IndexSegment segment = ColumnarSegmentLoader.load(indexDir, indexLoadingConfig, schema);
       addSegment(segment);
     } else {
       // Either we don't have the segment on disk or we have not committed in ZK. We should be starting the consumer
@@ -160,14 +175,7 @@ public class RealtimeTableDataManager extends AbstractTableDataManager {
             _segmentsMap.get(segmentName).getClass().getSimpleName());
         return;
       }
-      Schema schema = ZKMetadataProvider.getTableSchema(_propertyStore, _tableName);
-      Preconditions.checkNotNull(schema);
-      if (!isValid(schema, tableConfig.getIndexingConfig())) {
-        _logger.error("Not adding segment {}", segmentName);
-        throw new RuntimeException("Mismatching schema/table config for " + _tableName);
-      }
 
-      InstanceZKMetadata instanceZKMetadata = ZKMetadataProvider.getInstanceZKMetadata(_propertyStore, _instanceId);
       SegmentDataManager manager;
       if (SegmentName.isHighLevelConsumerSegmentName(segmentName)) {
         manager = new HLRealtimeSegmentDataManager(realtimeSegmentZKMetadata, tableConfig, instanceZKMetadata, this,
@@ -176,7 +184,7 @@ public class RealtimeTableDataManager extends AbstractTableDataManager {
         LLCRealtimeSegmentZKMetadata llcSegmentMetadata = (LLCRealtimeSegmentZKMetadata) realtimeSegmentZKMetadata;
         if (realtimeSegmentZKMetadata.getStatus().equals(Status.DONE)) {
           // TODO Remove code duplication here and in LLRealtimeSegmentDataManager
-          downloadAndReplaceSegment(segmentName, llcSegmentMetadata, indexLoadingConfig);
+          downloadAndReplaceSegment(segmentName, llcSegmentMetadata, indexLoadingConfig, schema);
           return;
         }
         manager = new LLRealtimeSegmentDataManager(realtimeSegmentZKMetadata, tableConfig, instanceZKMetadata, this,
@@ -193,7 +201,7 @@ public class RealtimeTableDataManager extends AbstractTableDataManager {
   }
 
   public void downloadAndReplaceSegment(@Nonnull String segmentName,
-      @Nonnull LLCRealtimeSegmentZKMetadata llcSegmentMetadata, @Nonnull IndexLoadingConfig indexLoadingConfig) {
+      @Nonnull LLCRealtimeSegmentZKMetadata llcSegmentMetadata, @Nonnull IndexLoadingConfig indexLoadingConfig, Schema schema) {
     final String uri = llcSegmentMetadata.getDownloadUrl();
     File tempSegmentFolder =
         new File(_indexDir, "tmp-" + segmentName + "." + String.valueOf(System.currentTimeMillis()));
@@ -205,7 +213,7 @@ public class RealtimeTableDataManager extends AbstractTableDataManager {
       _logger.info("Uncompressed file {} into tmp dir {}", tempFile, tempSegmentFolder);
       FileUtils.moveDirectory(tempSegmentFolder.listFiles()[0], new File(_indexDir, segmentName));
       _logger.info("Replacing LLC Segment {}", segmentName);
-      replaceLLSegment(segmentName, indexLoadingConfig);
+      replaceLLSegment(segmentName, indexLoadingConfig, schema);
     } catch (Exception e) {
       throw new RuntimeException(e);
     } finally {
@@ -215,9 +223,9 @@ public class RealtimeTableDataManager extends AbstractTableDataManager {
   }
 
   // Replace a committed segment.
-  public void replaceLLSegment(@Nonnull String segmentName, @Nonnull IndexLoadingConfig indexLoadingConfig) {
+  public void replaceLLSegment(@Nonnull String segmentName, @Nonnull IndexLoadingConfig indexLoadingConfig, Schema schema) {
     try {
-      IndexSegment indexSegment = ColumnarSegmentLoader.load(new File(_indexDir, segmentName), indexLoadingConfig);
+      IndexSegment indexSegment = ColumnarSegmentLoader.load(new File(_indexDir, segmentName), indexLoadingConfig, schema);
       addSegment(indexSegment);
     } catch (Exception e) {
       throw new RuntimeException(e);

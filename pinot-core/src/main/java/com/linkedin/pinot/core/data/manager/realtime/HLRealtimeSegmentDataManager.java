@@ -285,7 +285,7 @@ public class HLRealtimeSegmentDataManager extends RealtimeSegmentDataManager {
 
           TimeUnit timeUnit = schema.getTimeFieldSpec().getOutgoingGranularitySpec().getTimeType();
           IndexSegment segment =
-              ColumnarSegmentLoader.load(new File(resourceDir, segmentMetatdaZk.getSegmentName()), indexLoadingConfig);
+              ColumnarSegmentLoader.load(new File(resourceDir, segmentMetatdaZk.getSegmentName()), indexLoadingConfig, schema);
 
           segmentLogger.info("Committing Kafka offsets");
           boolean commitSuccessful = false;

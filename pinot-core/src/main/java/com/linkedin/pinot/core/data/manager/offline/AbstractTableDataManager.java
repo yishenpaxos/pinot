@@ -18,6 +18,7 @@ package com.linkedin.pinot.core.data.manager.offline;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.linkedin.pinot.common.data.Schema;
 import com.linkedin.pinot.common.config.TableConfig;
 import com.linkedin.pinot.common.metrics.ServerGauge;
 import com.linkedin.pinot.common.metrics.ServerMeter;
@@ -25,6 +26,7 @@ import com.linkedin.pinot.common.metrics.ServerMetrics;
 import com.linkedin.pinot.core.data.manager.config.TableDataManagerConfig;
 import com.linkedin.pinot.core.indexsegment.IndexSegment;
 import com.linkedin.pinot.core.segment.index.loader.IndexLoadingConfig;
+import com.linkedin.pinot.core.segment.virtualcolumn.VirtualColumnProviderFactory;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -264,5 +266,11 @@ public abstract class AbstractTableDataManager implements TableDataManager {
   @Override
   public String getTableName() {
     return _tableName;
+  }
+
+  protected void addBuiltInVirtualColumnsToSchema(Schema schema) {
+    if (schema != null) {
+      VirtualColumnProviderFactory.addBuiltInVirtualColumnsToSchema(schema);
+    }
   }
 }

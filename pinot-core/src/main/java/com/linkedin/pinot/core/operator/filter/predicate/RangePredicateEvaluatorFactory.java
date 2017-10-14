@@ -20,7 +20,7 @@ import java.util.List;
 import com.linkedin.pinot.common.data.FieldSpec;
 import com.linkedin.pinot.core.common.predicate.RangePredicate;
 import com.linkedin.pinot.core.realtime.impl.dictionary.MutableDictionary;
-import com.linkedin.pinot.core.segment.index.readers.ImmutableDictionaryReader;
+import com.linkedin.pinot.core.segment.index.readers.Dictionary;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 
@@ -42,7 +42,7 @@ public class RangePredicateEvaluatorFactory {
    * @return Dictionary based equality _predicate evaluator
    */
   public static PredicateEvaluator newOfflineDictionaryBasedEvaluator(RangePredicate predicate,
-      ImmutableDictionaryReader dictionary) {
+      Dictionary dictionary) {
     return new OfflineDictionaryBasedPredicateEvaluator(predicate, dictionary);
   }
 
@@ -94,7 +94,7 @@ public class RangePredicateEvaluatorFactory {
     private int _rangeEndIndex = 0;
     int _matchingSize;
 
-    public OfflineDictionaryBasedPredicateEvaluator(RangePredicate predicate, ImmutableDictionaryReader dictionary) {
+    public OfflineDictionaryBasedPredicateEvaluator(RangePredicate predicate, Dictionary dictionary) {
       this._predicate = predicate;
 
       final boolean incLower = predicate.includeLowerBoundary();

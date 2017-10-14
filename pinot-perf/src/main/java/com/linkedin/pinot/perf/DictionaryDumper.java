@@ -18,7 +18,7 @@ package com.linkedin.pinot.perf;
 import com.linkedin.pinot.common.segment.ReadMode;
 import com.linkedin.pinot.core.segment.index.IndexSegmentImpl;
 import com.linkedin.pinot.core.segment.index.loader.Loaders;
-import com.linkedin.pinot.core.segment.index.readers.ImmutableDictionaryReader;
+import com.linkedin.pinot.core.segment.index.readers.Dictionary;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
@@ -42,7 +42,7 @@ public class DictionaryDumper {
 
       IndexSegmentImpl indexSegmentImpl =
           (IndexSegmentImpl) Loaders.IndexSegment.load(indexSegmentDir, ReadMode.heap);
-      ImmutableDictionaryReader colDictionary = indexSegmentImpl.getDictionaryFor(args[1]);
+      Dictionary colDictionary = indexSegmentImpl.getDictionaryFor(args[1]);
       List<String> strIdList = Arrays.asList(args[2].split(","));
 
       for (String strId: strIdList) {
